@@ -321,9 +321,10 @@ void read_stdin()
 			msgbox_player udp_msg = {0};
 			udp_msg.mtype = 5;
 			msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
-			void *j;
-			pthread_join(*udp_player_th, (void**)&j);
-			free(j);
+			//void *j;
+			//pthread_join(*udp_player_th, (void**)&j);
+			pthread_join(*udp_player_th, 0);
+			//free(j);
 			
 			exit(0);
 			break;

@@ -147,8 +147,9 @@ void udp_player(void* arg)
 		if (msg_bytes > 0)
 		{
 			close(sd);
-			char *a = (char*)malloc(10);;
-			pthread_exit((void*)a);
+			//char *a = (char*)malloc(10);;
+			//pthread_exit((void*)a);
+			pthread_exit(0);
 		}
 		mytype = 3;
 		msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype, IPC_NOWAIT);
