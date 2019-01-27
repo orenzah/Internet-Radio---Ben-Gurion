@@ -152,10 +152,11 @@ void main(int argc, char* argv[])
 		exit(1);
 	}
 	
+	/*
 	head = (node*)malloc(sizeof(node));
 	head->next = NULL;
 	head->pointer = NULL;
-	
+	*/
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	FD_ZERO(&exceptfds);
@@ -324,7 +325,7 @@ void read_stdin()
 			//void *j;
 			//pthread_join(*udp_player_th, (void**)&j);
 			pthread_join(*udp_player_th, 0);
-			//free(j);
+			free(udp_player_th);
 			
 			exit(0);
 			break;
