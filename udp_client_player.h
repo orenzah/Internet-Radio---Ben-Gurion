@@ -204,9 +204,7 @@ void udp_player(void* arg)
 			{
 				continue;
 			}
-			printf("received %d\n", rec_bytes);
-			
-			
+			//printf("received %d\n", rec_bytes);						
 			fwrite(databuf + 28, sizeof(char),rec_bytes - 28, player);//write a buffer of size numbyts into fp
 
 		}
