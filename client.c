@@ -212,12 +212,12 @@ void main(int argc, char* argv[])
 			udp_msg_ip.mtype = 1;
 			udp_msg_port.mtype = 2;
 			sprintf(udp_msg_port.buf,"%d", mcast_p);
-			ip_to_str(udp_msg_ip.buf, mcast_g);
+			//ip_to_str(udp_msg_ip.buf, mcast_g);
 			
 			udp_player_th = (pthread_t*)malloc(sizeof(pthread_t));
 			msgsnd(msqid, &udp_msg_ip, sizeof(udp_msg_ip), 0);
 			msgsnd(msqid, &udp_msg_port, sizeof(udp_msg_port), 0);
-			printf("creating\n");
+			//printf("creating\n");
 			pthread_create(udp_player_th, NULL, udp_player, &msqid);
 		}
 		else
@@ -237,6 +237,7 @@ void main(int argc, char* argv[])
 	printf("Mutlicast group address:\t");
 	print_ip(mcast_g);
 	printf("Mutlicast group port:\t\t%04d\n", mcast_p);
+	printf("Server has %d stations\n", stations_cnt);
 	printf("Usage: \n");
 	printf("Ask Song:\nasksong #\n");
 	printf("Up Song:\nupsong filename\n");
@@ -503,6 +504,7 @@ void got_welcome(char* buffer)
 	struct welcome_msg msg = {0};
 
 	memcpy(&msg, buffer,	sizeof(struct welcome_msg));
+	
 	stations_cnt	= msg.numStations;
 	mcast_g			= msg.multicastGroup;
 	mcast_p			= msg.portNumber;	
