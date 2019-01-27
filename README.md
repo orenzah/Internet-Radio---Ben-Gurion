@@ -1,7 +1,8 @@
-# Welcome to the internet radio application project
+# Welcome to The Internet Radio Application Project
 Computers Networks 2 - 371-1-0211
 [Moodle](https://moodle2.bgu.ac.il/moodle/course/view.php?id=23418).
-
+[Book Manual](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%202018.pdf)
+[Presentation Manaul](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%20Presentation.pdf)
 ## Description
 
 The project may be divided to two parts:
@@ -10,32 +11,15 @@ The project may be divided to two parts:
 
 ### Server
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+The server part includes:
+A thread for UDP multicast transmitter.
+The main proccess is responsible for the 'welcome socket', each new new accepted client socket is delegated to a new thread.
+Each new thread is responsible for whole communication with his client.
 
 ### Client
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+The client part includes:
+A thread for the UDP multicast listener, while the mutlicast group can be changed using IPC Messages API.
+The client socket is implemented downto Layer 3 (IP Layer), due to binding restrictions.
 
-
-### Jekyll Themes
-
-
-
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
+The client main process will check changes in the sockets of the stdin and the tcp against the server, using select().
