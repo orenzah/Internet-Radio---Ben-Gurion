@@ -1,0 +1,10 @@
+CC=gcc
+FLAGS=-I.
+DEPS = structs.h
+OBJ = tcp_server.o 
+
+%.o: %.c $(DEPS)
+	$(CC) -g -o $@ $< $(CFLAGS)
+
+tcp_server: $(OBJ)
+	$(CC) -g -o $@ $^ $(CFLAGS) -lpthread
