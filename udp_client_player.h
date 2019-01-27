@@ -49,7 +49,7 @@ void udp_player(void* arg)
 	msgbox_player mymsg = {0};
 	int mytype = 1;
 	int msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype,0);
-	char ip_string[16];
+	char ip_string[16] = {0};
 	if (msg_bytes > 0)
 	{
 		
@@ -58,6 +58,7 @@ void udp_player(void* arg)
 	}
 	else
 	{
+		close(sd);
 		pthread_exit(0);
 	}
 	mytype = 2;
@@ -69,6 +70,7 @@ void udp_player(void* arg)
 	}
 	else
 	{
+		close(sd);
 		pthread_exit(0);
 	}
     mc_grp = inet_addr(ip_string);
@@ -174,14 +176,14 @@ void udp_player(void* arg)
 			*/
 			if(setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) 
 			{
-				perror("Adding multicast group error");
+				perror("Dropping multicast group error");
 				close(sd);
 				exit(1);
 			}
 			group.imr_multiaddr.s_addr = mc_grp + (station << 24);
 			if(setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) 
 			{
-				perror("Adding multicast group error");
+				perror("Adding (after dropping) multicast group error");
 				close(sd);
 				exit(1);
 			} 
