@@ -19,79 +19,15 @@
 #include <dirent.h>
 #include <time.h>
 
+
+#include "tcp_server.h"
 #define MYPORT 3456    /* the port users will be connecting to */
 #define BACKLOG 100    /* how many pending connections queue will hold */
 #define BUFFER_SIZE 1024
 #define MAX_SONGS 30
 
 
-/* predefined enums*/
-enum permitEnum {no, yes};
-/* predefined structs */
-struct msgbox
-{
-	long mtype;
-	char text[10];
-} typedef msgbox;
 
-struct song_node
-{
-	size_t	songSize;
-	uint32_t nameLength;
-	char* name;
-	uint16_t station;
-} typedef song_node;
-struct node
-{
-	void*	pointer;
-	struct node* next;
-} typedef node;
-
-struct mymsg {
-	long type;
-	char* text;
-};
-struct welcome_msg
-{
-	uint8_t replyType;
-	uint16_t numStations;
-	uint32_t multicastGroup;
-	uint16_t portNumber;
-};
-struct asksong_msg
-{
-	uint8_t replyType;
-	uint16_t station_number;
-};
-struct announce_msg
-{
-	uint8_t replyType;
-	uint8_t songNameSize;
-	char	text[100];
-} typedef announce_msg;
-struct upsong_msg
-{
-	uint8_t		replyType;
-	uint32_t	songSize;
-	uint8_t		songNameSize;
-	char		songName[100];
-} typedef upsong_msg;
-struct permit_msg
-{
-	uint8_t replyType;
-	uint8_t permit_value;
-};
-struct invalid_msg
-{
-	uint8_t replyType;
-	uint8_t replySize;
-	char	text[100];
-} typedef invalid_msg;
-struct newstations_msg
-{
-	uint8_t replyType;
-	uint16_t station_number;
-} typedef newstations_msg;
 
 /* Global variables */
 node*	head;
@@ -104,6 +40,8 @@ int	song_count = 0;
 pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 key_t	msg_boxes[100]	= {0};
 int		clients			= 1;		
+
+
 /* functions declarations */
 void*				th_tcp_control(void **args);
 int					get_msg_type(char * buffer, size_t size);
@@ -112,6 +50,8 @@ int					get_asksong_station(char * buffer, size_t size);
 void print_ip(uint32_t ip);
 void create_songs();
 void create_song_transmitter();
+
+
 void song_transmitter(void* arg)
 {
 	int station = *((int*)arg);
