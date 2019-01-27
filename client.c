@@ -118,6 +118,7 @@ void send_upsong(char* filename);
 void upload_song(char* filename);
 void got_newstations(char* buffer);
 void got_invalidCommand(char* buffer);
+void ip_to_str(char* str, uint32_t ip);
 void main(int argc, char* argv[])
 {
 	
@@ -131,8 +132,8 @@ void main(int argc, char* argv[])
 	int numbytes;
 	tv.tv_usec = 300000;
 	
-	
-	if ((msqid = msgget(2/*Warning key_t*/, IPC_CREAT | 0666 )) < 0) 
+	key_t msg_key = ftok("msgBox", 10);
+	if ((msqid = msgget(msg_key/*Warning key_t*/, IPC_CREAT | 0666 )) < 0) 
 	{
 		perror("msgget");
 		exit(1);
@@ -160,7 +161,7 @@ void main(int argc, char* argv[])
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	FD_ZERO(&exceptfds);
-	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -192,7 +193,7 @@ void main(int argc, char* argv[])
 
 	
 	char buf[1024] = {0};
-	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 	if ((numbytes = recv(sockfd, buf,BUFFER_SIZE,0)) == -1)
 	{
 		perror("recv");
@@ -213,13 +214,20 @@ void main(int argc, char* argv[])
 			udp_msg_ip.mtype = 1;
 			udp_msg_port.mtype = 2;
 			sprintf(udp_msg_port.buf,"%d", mcast_p);
-			//ip_to_str(udp_msg_ip.buf, mcast_g);
+			ip_to_str(udp_msg_ip.buf, mcast_g);
 			
 			udp_player_th = (pthread_t*)malloc(sizeof(pthread_t));
+			
 			msgsnd(msqid, &udp_msg_ip, sizeof(udp_msg_ip), 0);
 			msgsnd(msqid, &udp_msg_port, sizeof(udp_msg_port), 0);
-			//printf("creating\n");
-			pthread_create(udp_player_th, NULL, udp_player, &msqid);
+			printf("client  %d\n", msqid);
+			/*
+			int rc;
+			pthread_attr_t attr;
+			rc = pthread_attr_init(&attr);
+			rc = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+			* */
+			pthread_create(udp_player_th,0, udp_player, &msqid);
 		}
 		else
 		{
@@ -319,12 +327,14 @@ void read_stdin()
 		case 4:
 			//TODO quit
 			close(sockfd);
+			
 			msgbox_player udp_msg = {0};
 			udp_msg.mtype = 5;
 			msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
 			//void *j;
 			//pthread_join(*udp_player_th, (void**)&j);
 			pthread_join(*udp_player_th, 0);
+			
 			free(udp_player_th);
 			
 			exit(0);
@@ -424,9 +434,9 @@ void send_upsong(char* filename)
 		exit(1);
 	}
 	start = clock();
-	struct 	timeval tv;		/*The time wait for socket to be changed	*/
+	struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
 	tv.tv_usec = 300000;
-	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 	size_t numbytes = 0;
 	char temp_buffer[BUFFER_SIZE] = {0};
 	if ((numbytes = recv(sockfd, temp_buffer,BUFFER_SIZE,0)) == -1)
@@ -475,9 +485,9 @@ void upload_song(char* filename)
 	printf("start uploading\n");
 	clearerr(songFile);
 	size_t bytes_transmit = 0;
-	struct 	timeval tv;		/*The time wait for socket to be changed	*/
+	struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
 	tv.tv_usec = 300000;
-	setsockopt(sockfd, SOL_SOCKET,SO_SNDTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(sockfd, SOL_SOCKET,SO_SNDTIMEO, (char*)&tv, sizeof(tv));
 	while(feof(songFile) == 0)
 	{
 		char songBuffer[1024] = {0};
