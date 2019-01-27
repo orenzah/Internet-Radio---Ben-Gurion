@@ -451,6 +451,10 @@ void send_upsong(char* filename)
 		{
 			upload_song(filename);
 		}
+		else
+		{
+			printf("the server answered 'Yesh li Haver'.\nbitch...\n");
+		}
 		
 	}
 	msg_waiting[2] = 1;
