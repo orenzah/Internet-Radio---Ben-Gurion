@@ -69,7 +69,10 @@ struct newstations_msg
 
 struct client_node
 {
-	
+	int fileDescriptor;
+	int clientId;
+	struct client_node* next;
+	struct client_node* prev;
 } typedef client_node;
 
 
