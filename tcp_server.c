@@ -40,7 +40,7 @@ int	song_count = 0;
 pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 key_t	msg_boxes[100]	= {0};
 int		clients			= 1;		
-
+client_node* clientsList = 0;
 
 /* functions declarations */
 void*				th_tcp_control(void **args);
@@ -51,7 +51,39 @@ void print_ip(uint32_t ip);
 void create_songs();
 void create_song_transmitter();
 
-
+/*void signalStopHandler(int signo)
+{
+	if (signo != SIGSTP)
+	{
+		return;
+	}
+	
+	client_node* temp;
+	while (clientsList)
+	{
+		temp = clientsList;
+		clientsList = clientsList->next;
+		close(temp->fileDescriptor);
+		free(temp);
+	}
+	{
+		int i;
+		for (i = 0; i < MAX_SONGS; i++)
+		{
+			if (song_arr[i].name == 0)
+			{
+				break;
+			}
+			free(song_arr[i].name);
+			pthread_cancel(*(song_arr[i].thread_p));
+			pthread_join(*(song_arr[i].thread_p),0);
+			free((song_arr[i].thread_p));
+		}
+	}
+	exit(0);
+	
+}
+*/
 void song_transmitter(void* arg)
 {
 	int station = *((int*)arg);
@@ -176,7 +208,7 @@ void main(int argc, char* argv[])
 		perror("msgget");
 		exit(1);
 	}	
-	
+	//signal(SIGSTP, signalStopHandler);
 
 	sscanf(argv[1], "%d", &tcp_port);
 	inet_pton(AF_INET, argv[2], &(mcast_g));
@@ -194,10 +226,13 @@ void main(int argc, char* argv[])
 		song.name = (char*)malloc(length);
 		strcpy(song.name, argv[i]);
 		song.station = song_count;
+		pthread_t* songPlayer = (pthread_t*)malloc(sizeof(pthread_t));
+		song.thread_p = songPlayer;
 		song_arr[song_count] = song;
 		song_count++;
 		fclose(songFile);
-		pthread_t* songPlayer = (pthread_t*)malloc(sizeof(pthread_t));
+		
+		
 		int newStation = i-4;
 		pthread_create(songPlayer, NULL, song_transmitter, &newStation);
 	}
@@ -237,7 +272,8 @@ void main(int argc, char* argv[])
 		exit(1);
 	}
 
-	while(1) {  /* main accept() loop */
+	while(1) 
+	{  /* main accept() loop */
 	FD_SET(sockfd, &readfds); /*Add sock_fd to the set of file descriptors to read from */
 	tv.tv_sec = 30; 				/*Initiate time to wait for fd to change */
 	if (select(sockfd + 1, &readfds, 0, 0, &tv) < 0) {
@@ -269,7 +305,7 @@ void main(int argc, char* argv[])
 		clients++;
 		args[2] = client_id;
 		
-		
+		cascadeClient(new_fd, client_id, &clientsList);
 		printf("server: got new connection with fd=%d\n", new_fd);
 		pthread_create(thread_pt, NULL, th_tcp_control, args);
 
@@ -338,9 +374,9 @@ void *th_tcp_control(void **args)
 		int newstation = 0;
 		if(msg_bytes > 0)
 		{
-			printf("%d ", strlen(mymsg.text));
-			printf("%10s\n",mymsg.text);
-			printf("strcmp: %d\n", strcmp(mymsg.text, "newstatio"));
+			//printf("%d ", strlen(mymsg.text));
+			//printf("%10s\n",mymsg.text);
+			//printf("strcmp: %d\n", strcmp(mymsg.text, "newstatio"));
 			newstation = (strcmp(mymsg.text, "newstatio") == 0)*1;
 		}
 		
@@ -355,8 +391,7 @@ void *th_tcp_control(void **args)
 			
 			memcpy(msgBuf, &temp_msg, size_send);
 			send(client_fd, msgBuf, size_send, 0);
-			newstation = 0;
-			
+			newstation = 0;			
 		}
 		//TODO finish msg box
 		ssize_t numBytesRcvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
@@ -365,6 +400,20 @@ void *th_tcp_control(void **args)
 			//close connection
 
 			printf("closing socket and thread\n");
+			client_node* temp = clientsList;
+			if ((temp->prev) == NULL)
+			{
+				clientsList = temp->next;
+			}
+			else
+			{
+				while (temp && (temp->clientId != mytype))
+				{
+					temp = temp->next;
+				}
+				(temp->prev)->next = temp->next;
+			}
+			free(temp);
 			close(client_fd);
 			pthread_exit(0);
 		}
@@ -518,12 +567,13 @@ void send_newstation(int fd)
 void init_newstations_procedure(void)
 {
 	msgbox mymsg = {0};
-	int i;
-	for (i = 0; i < clients; i++)
+	client_node* temp = clientsList;
+	strcpy(mymsg.text, "newstatio");
+	while (temp)
 	{
-		mymsg.mtype = i+1;
-		strcpy(mymsg.text, "newstatio");
+		mymsg.mtype = temp->clientId;
 		msgsnd(msqid, &mymsg, sizeof(mymsg), 0);
+		temp = temp->next;
 	}
 }
 int get_msg_type(char * buffer, size_t size)

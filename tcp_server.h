@@ -13,6 +13,7 @@ struct song_node
 	uint32_t nameLength;
 	char* name;
 	uint16_t station;
+	pthread_t* thread_p;
 } typedef song_node;
 struct node
 {
@@ -75,4 +76,27 @@ struct client_node
 	struct client_node* prev;
 } typedef client_node;
 
-
+void cascadeClient(int fd, int id, client_node** node)
+{
+	client_node*  temp = (client_node*)malloc(sizeof(client_node));
+	if (*node == NULL)
+	{
+		(*node) = temp;
+		(*node)->fileDescriptor = fd;
+		(*node)->clientId		= id;
+		(*node)->next = NULL;
+		(*node)->prev = NULL;
+		return;
+	}
+	while ((*node)->next)
+	{
+		(*node) = (*node)->next;
+	}
+	(*node)->next = temp;
+	temp->prev = (*node);
+	
+	temp->fileDescriptor = fd;
+	temp->clientId		= id;
+	temp->next = NULL;
+	return;
+}
