@@ -18,7 +18,15 @@ struct msgbox_player
 	char buf[100];
 } typedef msgbox_player;
 
-
+void print_ip_udp(uint32_t ip)
+{
+    unsigned char bytes[4];
+    bytes[0] = ip & 0xFF;
+    bytes[1] = (ip >> 8) & 0xFF;
+    bytes[2] = (ip >> 16) & 0xFF;
+    bytes[3] = (ip >> 24) & 0xFF;   
+    printf("%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
+}
 
 void udp_player(void* arg)
 {
@@ -67,7 +75,7 @@ void udp_player(void* arg)
     printf("ip %x\n", mc_grp);
     mc_grp_old = mc_grp;
     
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
 	if(sd < 0) 
 	{
 		perror("Opening datagram socket error");
@@ -129,8 +137,8 @@ void udp_player(void* arg)
 	
    FILE* player;
    player = popen("play -t mp3 -> /dev/null 2>&1", "w");
-   char databuf[1024] = {0};
-   while(1)//while no change station input form user
+   char databuf[2048] = {0};
+	while(1)//while no change station input form user
 	{
 		int station;
 		msgbox_player mymsg = {0};
@@ -179,9 +187,10 @@ void udp_player(void* arg)
 		}		
 		
 		int size = sizeof(localSock);
-		rec_bytes = recvfrom(sd, (char *)databuf, BUFFER_SIZE,  
+		rec_bytes = recvfrom(sd, (char *)databuf, BUFFER_SIZE*2,  
                 0, (struct sockaddr *) &localSock, 
                 &size);
+        
 		if(rec_bytes < 0) 
 		{
 			perror("Reading datagram message error");
@@ -190,10 +199,18 @@ void udp_player(void* arg)
 		}
 		else 
 		{
-			//printf("received %d\n", rec_bytes);
-			fwrite(databuf , sizeof(char),rec_bytes, player);//write a buffer of size numbyts into fp
+			uint32_t dst_ip = *(uint32_t*)((databuf + 16));
+			if ( dst_ip != group.imr_multiaddr.s_addr)
+			{
+				continue;
+			}
+			printf("received %d\n", rec_bytes);
+			
+			
+			fwrite(databuf + 28, sizeof(char),rec_bytes - 28, player);//write a buffer of size numbyts into fp
 
 		}
 	
 	}
 }
+

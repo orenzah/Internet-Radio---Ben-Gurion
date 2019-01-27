@@ -428,6 +428,11 @@ void send_upsong(char* filename)
 	char temp_buffer[BUFFER_SIZE] = {0};
 	if ((numbytes = recv(sockfd, temp_buffer,BUFFER_SIZE,0)) == -1)
 	{
+		if (errno == EAGAIN)
+		{
+			printf("timeout reached\n");
+		}
+		
 		perror("recv");
 		exit(1);
 	}
@@ -463,6 +468,9 @@ void upload_song(char* filename)
 	printf("start uploading\n");
 	clearerr(songFile);
 	size_t bytes_transmit = 0;
+	struct 	timeval tv;		/*The time wait for socket to be changed	*/
+	tv.tv_usec = 300000;
+	setsockopt(sockfd, SOL_SOCKET,SO_SNDTIMEO, (const char*)&tv, sizeof tv);
 	while(feof(songFile) == 0)
 	{
 		char songBuffer[1024] = {0};
@@ -470,6 +478,10 @@ void upload_song(char* filename)
 		bytes = fread(songBuffer, sizeof(char), 1024, songFile);
 		if (send(sockfd, songBuffer, bytes,0) == -1)
 		{
+			if ( errno == EAGAIN)
+			{
+				printf("timeout reached\n");
+			}
 			perror("send");
 			exit(1);
 		}
