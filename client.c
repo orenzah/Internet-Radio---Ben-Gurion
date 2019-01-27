@@ -358,7 +358,7 @@ void read_socket(int fd)
 				got_invalidCommand(buffer);
 				break;
 			case 4:
-				printf("newstations\n");
+				//printf("newstations\n");
 				got_newstations(buffer);
 				break;
 			default:
@@ -517,7 +517,8 @@ void got_newstations(char* buffer)
 {
 	newstations_msg msg = {0};
 	memcpy(&msg, buffer,	sizeof(struct newstations_msg));
-	printf("got new stations\n");
+	printf("server announced on the new station %d", msg.station_number);
+	//printf("got new stations\n");
 	//TODO something with the new song
 }
 int got_permit(char* buffer)
