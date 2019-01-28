@@ -14,7 +14,7 @@ The project may be divided to two parts:
 The server part includes:
 A thread for UDP multicast transmitter.
 The main proccess is responsible for the 'welcome socket', each new new accepted client socket is delegated to a new thread.
-Each new thread is responsible for whole communication with his client.
+Each new thread is responsible for whole communication with its client.
 
 ### Client
 
