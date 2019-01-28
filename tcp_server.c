@@ -323,7 +323,10 @@ void *th_tcp_control(void **args)
 	size_t struct_size;
 	char* buf2snd;
 
-	printf("New thread with socket fd %d\n", client_fd);
+	printf("New client thread created, controlling socket %d\n\r", client_fd);
+	struct timeval timeout;
+	timeout.tv_usec = 1000000;
+	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 	ssize_t numBytesRcvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	buffer[numBytesRcvd] = '\0';
 	if(get_msg_type(buffer, numBytesRcvd) != 0)
@@ -348,7 +351,6 @@ void *th_tcp_control(void **args)
 		free(buf2snd);
 	}
 	else
-	
 	{
 		struct welcome_msg msg	= {0};
 		struct_size =  sizeof(struct welcome_msg);
@@ -506,7 +508,7 @@ void *th_tcp_control(void **args)
 						struct 	timeval tv;		/*The time wait for socket to be changed	*/
 						tv.tv_usec = 1000000;
 						
-						setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+						setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 						while ((len = recv(client_fd, songBuffer, BUFFER_SIZE, 0)) > 0)
 						{
 							if(len == 0)
@@ -554,7 +556,19 @@ void *th_tcp_control(void **args)
 			case 3:
 				break;
 			default:
-				/*TODO Wrong message tending*/
+				{
+					invalid_msg msg = {0};
+					char inv_buf[140] = {0};
+					msg.replyType = 3;
+					strcpy(msg.text, "Invalid Command has been asserted");
+					msg.replySize = strlen(msg.text);
+					size_t buf_size = inv_msg.replySize + 2;
+					memcpy(inv_buf, &msg, buf_size);
+					if (send(client_fd, inv_buf, buf_size, 0) == -1)
+					{
+						perror("send invalid_command");
+					}					
+				}
 				break;
 		}
 		printf("Received %ld bytes from fd: %d\n", numBytesRcvd, client_fd);		
