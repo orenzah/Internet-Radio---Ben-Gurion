@@ -562,7 +562,7 @@ void *th_tcp_control(void **args)
 					msg.replyType = 3;
 					strcpy(msg.text, "Invalid Command has been asserted");
 					msg.replySize = strlen(msg.text);
-					size_t buf_size = inv_msg.replySize + 2;
+					size_t buf_size = msg.replySize + 2;
 					memcpy(inv_buf, &msg, buf_size);
 					if (send(client_fd, inv_buf, buf_size, 0) == -1)
 					{
