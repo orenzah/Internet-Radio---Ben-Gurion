@@ -539,7 +539,9 @@ void got_announce(char* buffer)
 void got_newstations(char* buffer)
 {
 	newstations_msg msg = {0};
-	memcpy(&msg, buffer,	sizeof(struct newstations_msg));
+	memcpy(&(msg.replyType), buffer,	1);
+	memcpy(&(msg.station_number), buffer + 1,	2);
+	msg.station_number = ntohs(msg.station_number);
 	printf("server announced on the new station %d", msg.station_number);
 	//printf("got new stations\n");
 	//TODO something with the new song
