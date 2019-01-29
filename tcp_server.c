@@ -608,14 +608,20 @@ int get_msg_type(char * buffer, size_t size)
 upsong_msg get_upsong_details(char * buffer, size_t size)
 {
 	struct upsong_msg msg =	{0};
-	memcpy(&msg, buffer, sizeof(struct upsong_msg));
+	memcpy(&(msg.replyType), buffer, 1);
+	memcpy(&(msg.songSize), buffer, 4);
+	msg.songSize = ntohl(msg.songSize);
+	memcpy(&(msg.songNameSize), buffer, 1);
+	memcpy(&(msg.songName), buffer, msg.songNameSize);
 	return msg;
 }
 
 int	get_asksong_station(char * buffer, size_t size)
 {
 	struct asksong_msg msg =	{0};
-	memcpy(&msg, buffer, sizeof(struct asksong_msg));
+	memcpy(&(msg.replyType), buffer, 1);
+	memcpy(&(msg.station_number), buffer + 1, 2);
+	msg.station_number = ntohs(msg.station_number);
 	return msg.station_number;
 }
 
