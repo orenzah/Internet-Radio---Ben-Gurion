@@ -194,7 +194,7 @@ void main(int argc, char* argv[])
 	struct 	sockaddr_in 	their_addr; /* connector's address information */
 	int 					sin_size;
 	
-	struct 	timeval 		tv;		/*The time wait for socket to be changed	*/
+	struct 	timeval 		tv = {0};//The time wait for socket to be changed	*/
 	fd_set 					readfds, writefds, exceptfds; /*File descriptors for read, write and exceptions */
 	uint16_t tcp_port;
 	if (argc < 5)
@@ -324,7 +324,7 @@ void *th_tcp_control(void **args)
 	char* buf2snd;
 
 	printf("New client thread created, controlling socket %d\n\r", client_fd);
-	struct timeval timeout;
+	struct timeval = {0};
 	timeout.tv_usec = 1000000;
 	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 	ssize_t numBytesRcvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
@@ -491,9 +491,9 @@ void *th_tcp_control(void **args)
 					}
 					
 					/*TODO: check mutex, then answer permit*/
-					buf2snd = (char*)malloc(struct_size);
-					memcpy(buf2snd, &msg, struct_size);
-					send(client_fd, buf2snd, struct_size, 0);
+					buf2snd = (char*)malloc(2);
+					memcpy(buf2snd, &msg, 2);
+					send(client_fd, buf2snd, 2, 0);
 					free(buf2snd);
 					printf("after reply\n");
 					if (msg.permit_value)
@@ -512,7 +512,7 @@ void *th_tcp_control(void **args)
 						song.station = song_count;
 						song_arr[song_count++] = song;
 						printf("start downloading\n");
-						struct 	timeval tv;		/*The time wait for socket to be changed	*/
+						struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
 						tv.tv_usec = 1000000;
 						
 						setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));

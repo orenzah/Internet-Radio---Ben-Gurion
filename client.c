@@ -125,7 +125,7 @@ void main(int argc, char* argv[])
 	
 	struct 	sockaddr_in 	server_addr; /* connector's address information */
 	int 					sin_size;
-	struct 	timeval 		tv;		/*The time wait for socket to be changed	*/
+	struct 	timeval 		tv = {0};		/*The time wait for socket to be changed	*/
 	fd_set 					readfds, writefds, exceptfds; /*File descriptors for read, write and exceptions */
 	struct hostent *he;
 	int port;
@@ -196,8 +196,17 @@ void main(int argc, char* argv[])
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 	if ((numbytes = recv(sockfd, buf,BUFFER_SIZE,0)) == -1)
 	{
-		perror("recv");
-		exit(1);
+		if (errno == EAGAIN)
+		{
+			printf("timeout: server is not responding to Hello Message\n");
+			close(sockfd);
+			exit(1);
+		}
+		else
+		{
+			perror("recv");
+			exit(1);
+		}
 	}
 	if (numbytes > 0)
 	{
@@ -486,7 +495,7 @@ void upload_song(char* filename)
 	fseek(songFile, 0L, SEEK_END);
 	size_t sz = ftell(songFile);
 	fseek(songFile, 0L, SEEK_SET);
-	printf("the first char: %d\n", fgetc(songFile));
+	//printf("the first char: %d\n", fgetc(songFile));
 	fseek(songFile, 0L, SEEK_SET);
 	printf("start uploading\n");
 	clearerr(songFile);
@@ -542,7 +551,7 @@ void got_newstations(char* buffer)
 	memcpy(&(msg.replyType), buffer,	1);
 	memcpy(&(msg.station_number), buffer + 1,	2);
 	msg.station_number = ntohs(msg.station_number);
-	printf("server announced on the new station %d", msg.station_number);
+	printf("server announced on the new station %d\n\r", msg.station_number);
 	//printf("got new stations\n");
 	//TODO something with the new song
 }
