@@ -450,7 +450,9 @@ void *th_tcp_control(void **args)
 					size_t buf_size = sizeof(announce_msg) - 100 + strlen(msg.text);
 					msg.replyType = 1;
 					buf2snd = (char*)malloc(buf_size);
-					memcpy(buf2snd, &msg, buf_size);
+					memcpy(buf2snd, &(msg.replyType), 1);
+					memcpy(buf2snd, &(msg.songNameSize), 1);
+					memcpy(buf2snd, &(msg.text),strlen(msg.text));
 					send(client_fd, buf2snd, struct_size, 0);
 					free(buf2snd);
 				}
