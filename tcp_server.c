@@ -353,17 +353,21 @@ void *th_tcp_control(void **args)
 	else
 	{
 		struct welcome_msg msg	= {0};
-		struct_size =  sizeof(struct welcome_msg);
-
+		struct_size =  9;//sizeof(struct welcome_msg);
+		printf("size of welcome: %d\n", struct_size);
 		msg.replyType			= 0;
-		msg.numStations			= song_count;
-		msg.multicastGroup		= mcast_g;
-		msg.portNumber			= mcast_p;
+		msg.numStations			= htons(song_count);
+		msg.multicastGroup		= htonl(mcast_g);
+		msg.portNumber			= htons(mcast_p);
 		
 		//struct_size = 1+2+4+2;
 		
 		buf2snd = (char*)malloc(struct_size);
-		memcpy(buf2snd, &msg, struct_size);
+		memcpy(buf2snd, &(msg.replyType), 1);
+		memcpy((uint16_t*)(buf2snd + 1), &(msg.numStations), 2);
+		memcpy((uint32_t*)(buf2snd + 3), &(msg.multicastGroup), 4);
+		memcpy((uint16_t*)(buf2snd + 7), &(msg.portNumber), 2);
+		//memcpy(buf2snd, &msg, struct_size);
 		
 		send(client_fd, buf2snd, struct_size, 0);
 		free(buf2snd);
@@ -387,11 +391,12 @@ void *th_tcp_control(void **args)
 			printf("newstation arrived\n");
 			newstations_msg temp_msg = {0};
 			temp_msg.replyType = 4;
-			temp_msg.station_number = clients;
-			size_t size_send = sizeof(temp_msg);
+			temp_msg.station_number = htons(clients);
+			size_t size_send = 3;//sizeof(temp_msg);
 			char msgBuf[100] = {0};
-			
-			memcpy(msgBuf, &temp_msg, size_send);
+			memcpy(msgBuf, &(temp_msg.replyType), 1);
+			memcpy((uint16_t*)(msgBuf + 1), &(temp_msg.replyType), 2);
+			//memcpy(msgBuf, &temp_msg, size_send);
 			send(client_fd, msgBuf, size_send, 0);
 			newstation = 0;			
 		}
