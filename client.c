@@ -425,14 +425,14 @@ void send_upsong(char* filename)
 	printf("sending upsong\n");
 	upsong_msg msg = {0};
 	msg.commandType = 2;
-	
+	strcpy(msg.songName, filename);
 	msg.songNameSize = strlen(filename);
 	msg.songSize = htonl(sz);
 	char buffer[sizeof(msg)] = {0};
 	memcpy(buffer, &(msg.commandType), 1);
-	memcpy(buffer + 1, &(msg.replyType), 4);
-	memcpy(buffer + 5, &(msg.replyType), 1);
-	strcpy(msg.songName, filename);
+	memcpy(buffer + 1, &(msg.songSize), 4);
+	memcpy(buffer + 5, &(msg.songNameSize), 1);
+	strcpy(buffer + 5, filename);
 	//memcpy(buffer + 6, &(msg.replyType), 1);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
 	{
