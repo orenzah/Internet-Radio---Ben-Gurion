@@ -404,6 +404,8 @@ void send_asksong(int arg)
 	msg.stationNumber = arg;
 	char buffer[sizeof(msg)] = {0};
 	memcpy(buffer, &msg, sizeof(msg));
+	memcpy(buffer + 1, &(msg.stationNumber), 2);
+	msg.stationNumber = ntohs(msg.stationNumber);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
 	{
 		perror("send");
@@ -423,11 +425,15 @@ void send_upsong(char* filename)
 	printf("sending upsong\n");
 	upsong_msg msg = {0};
 	msg.commandType = 2;
-	strcpy(msg.songName, filename);
+	
 	msg.songNameSize = strlen(filename);
-	msg.songSize = sz;
+	msg.songSize = htonl(sz);
 	char buffer[sizeof(msg)] = {0};
-	memcpy(buffer, &msg, sizeof(msg));
+	memcpy(buffer, &(msg.commandType), 1);
+	memcpy(buffer + 1, &(msg.replyType), 4);
+	memcpy(buffer + 5, &(msg.replyType), 1);
+	strcpy(msg.songName, filename);
+	//memcpy(buffer + 6, &(msg.replyType), 1);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
 	{
 		perror("send");
@@ -514,12 +520,15 @@ void got_welcome(char* buffer)
 {
 	
 	struct welcome_msg msg = {0};
-
-	memcpy(&msg, buffer,	sizeof(struct welcome_msg));
+	memcpy(&(msg.replyType),		buffer,		1);
+	memcpy(&(msg.numStations), 		buffer + 1,	2);
+	memcpy(&(msg.multicastGroup),	buffer + 3,	4);
+	memcpy(&(msg.portNumber),		buffer + 7,	2);
 	
-	stations_cnt	= msg.numStations;
-	mcast_g			= msg.multicastGroup;
-	mcast_p			= msg.portNumber;	
+	
+	stations_cnt	= ntohs(msg.numStations);
+	mcast_g			= ntohl(msg.multicastGroup);
+	mcast_p			= ntohs(msg.portNumber);	
 }
 void got_announce(char* buffer)
 {
@@ -564,5 +573,5 @@ void ip_to_str(char* str, uint32_t ip)
     bytes[2] = (ip >> 16) & 0xFF;
     bytes[3] = (ip >> 24) & 0xFF;   
     sprintf(str, "%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
-    printf(str, "%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);   
+    //printf("ip_to_str:%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);   
 }
