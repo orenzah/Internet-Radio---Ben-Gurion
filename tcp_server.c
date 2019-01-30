@@ -87,6 +87,7 @@ void create_song_transmitter();
 void song_transmitter(void* arg)
 {
 	int station = *((int*)arg);
+	free(arg);
 	int sd;
 	int i;
 	struct ip_mreq group;
@@ -232,9 +233,9 @@ void main(int argc, char* argv[])
 		song_count++;
 		fclose(songFile);
 		
-		
-		int newStation = i-4;
-		pthread_create(songPlayer, NULL, song_transmitter, &newStation);
+		int* newStationPointer = (int*)malloc(sizeof(int));
+		*newStationPointer = i-4;
+		pthread_create(songPlayer, NULL, song_transmitter,newStationPointer/* &newStation*/);
 	}
 	//create_songs();
 	
@@ -324,7 +325,7 @@ void *th_tcp_control(void **args)
 	char* buf2snd;
 
 	printf("New client thread created, controlling socket %d\n\r", client_fd);
-	struct timeval = {0};
+	struct timeval timeout = {0};
 	timeout.tv_usec = 1000000;
 	setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 	ssize_t numBytesRcvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
