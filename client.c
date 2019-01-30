@@ -23,7 +23,7 @@
 #define BACKLOG 100    /* how many pending connections queue will hold */
 #define BUFFER_SIZE 1024
 #define MAX_SONGS 30
-#define UPLOAD_INTERVAL 250
+#define UPLOAD_INTERVAL 8000
 clock_t start, end;
 /* predefined enums*/
 enum permitEnum {no, yes};
