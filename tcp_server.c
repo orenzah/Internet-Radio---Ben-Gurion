@@ -616,10 +616,10 @@ upsong_msg get_upsong_details(char * buffer, size_t size)
 {
 	struct upsong_msg msg =	{0};
 	memcpy(&(msg.replyType), buffer, 1);
-	memcpy(&(msg.songSize), buffer, 4);
+	memcpy(&(msg.songSize), buffer + 1, 4);
 	msg.songSize = ntohl(msg.songSize);
-	memcpy(&(msg.songNameSize), buffer, 1);
-	memcpy(&(msg.songName), buffer, msg.songNameSize);
+	memcpy(&(msg.songNameSize), buffer + 5, 1);
+	memcpy(&(msg.songName), buffer + 6, msg.songNameSize);
 	return msg;
 }
 
