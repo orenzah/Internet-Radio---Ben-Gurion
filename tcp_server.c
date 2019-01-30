@@ -560,8 +560,9 @@ void *th_tcp_control(void **args)
 							//TODO fashion exit
 						}
 						pthread_t* songPlayer = (pthread_t*)malloc(sizeof(pthread_t));
-						int newStation = song.station;
-						pthread_create(songPlayer, NULL, song_transmitter, &newStation);
+						int* newStation = (int*)malloc(sizeof(int));
+						*newStation = song.station;
+						pthread_create(songPlayer, NULL, song_transmitter, newStation);
 						/* Recv the upload*/
 						init_newstations_procedure();
 					}
@@ -616,7 +617,7 @@ upsong_msg get_upsong_details(char * buffer, size_t size)
 {
 	struct upsong_msg msg =	{0};
 	memcpy(&(msg.replyType), buffer, 1);
-	memcpy(&(msg.songSize), buffer + 1, 4);
+	memcpy(&(msg.songSize), (uint32_t*)(buffer + 1), 4);
 	msg.songSize = ntohl(msg.songSize);
 	memcpy(&(msg.songNameSize), buffer + 5, 1);
 	memcpy(&(msg.songName), buffer + 6, msg.songNameSize);
