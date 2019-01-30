@@ -518,7 +518,7 @@ void *th_tcp_control(void **args)
 						song.name = songNameText;
 						song.station = song_count;
 						song_arr[song_count++] = song;
-						printf("start downloading\n");
+						printf("Start downloading %s\n", songNameText);
 						struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
 						tv.tv_usec = 1000000;
 						
