@@ -168,10 +168,10 @@ void song_transmitter(void* arg)
 			exit(1);
 		}
 		bytes_streamed += 1024;
-		usleep(62500);
+		usleep(62000);
 		//TODO read again at section 3.3
 		
-		/*
+		
 		if (bytes_streamed > 128*128) 
 		{
 			end = clock();
@@ -184,7 +184,7 @@ void song_transmitter(void* arg)
 			bytes_streamed = 0;
 			
 		}
-		*/		
+				
 		//maybe add sleep after full second passed
 	}
 	
