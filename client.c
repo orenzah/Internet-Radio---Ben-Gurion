@@ -514,18 +514,18 @@ void upload_song(char* filename)
 		{
 			if ( errno == EAGAIN)
 			{
-				printf("\b\b\b\b\btimeout reached\n");
+				printf("\b\b\b\b\b\btimeout reached\n");
 			}
 			perror("send");
 			exit(1);
 		}
 		bytes_transmit += bytes;
 		double percent = 100*((double)bytes_transmit / sz);
-		printf("\b\b\b\b\b%5.2lf%", percent);
+		printf("\b\b\b\b\b\b%5.2lf%", percent);
 		usleep(UPLOAD_INTERVAL);
 		
 	}
-	printf("\b\b\b\b\b");
+	printf("\b\b\b\b\b\b");
 	printf("done uploading %d bytes\n", bytes_transmit);
 	fclose(songFile);
 	
