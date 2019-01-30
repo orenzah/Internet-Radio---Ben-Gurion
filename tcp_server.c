@@ -177,12 +177,12 @@ void song_transmitter(void* arg)
 			end = clock();
 			double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 			int micro = (int)((1 - cpu_time_used)*1000*1000);
-			printf("wait: %lf\n", micro);
+			printf("wait: %lf\n\r", micro);
 			if (micro > 0)
 			{
 					usleep(micro);
 			}
-			printf("Delay by: %f\n", (0.25 - cpu_time_used));
+			printf("Delay by: %f\n\r", (0.25 - cpu_time_used));
 			
 			
 			start = clock();
