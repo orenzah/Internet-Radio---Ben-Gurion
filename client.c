@@ -431,7 +431,7 @@ void send_upsong(char* filename)
 	fseek(songFile, 0L, SEEK_END);
 	size_t sz = ftell(songFile);
 	fclose(songFile);
-	printf("sending upsong\n");
+	
 	upsong_msg msg = {0};
 	msg.commandType = 2;
 	strcpy(msg.songName, filename);
@@ -442,6 +442,7 @@ void send_upsong(char* filename)
 	memcpy(buffer + 1, &(msg.songSize), 4);
 	memcpy(buffer + 5, &(msg.songNameSize), 1);
 	strcpy(buffer + 6, filename);
+	printf("Sending upsong %s\n", filename);
 	//memcpy(buffer + 6, &(msg.replyType), 1);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
 	{
