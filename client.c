@@ -504,6 +504,7 @@ void upload_song(char* filename)
 	struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
 	tv.tv_usec = 300000;
 	setsockopt(sockfd, SOL_SOCKET,SO_SNDTIMEO, (char*)&tv, sizeof(tv));
+	printf("00.00%");
 	while(feof(songFile) == 0)
 	{
 		char songBuffer[1024] = {0};
@@ -513,15 +514,18 @@ void upload_song(char* filename)
 		{
 			if ( errno == EAGAIN)
 			{
-				printf("timeout reached\n");
+				printf("\b\b\b\b\btimeout reached\n");
 			}
 			perror("send");
 			exit(1);
 		}
 		bytes_transmit += bytes;
+		double percent = 100*((double)bytes_transmit / sz);
+		printf("\b\b\b\b\b%5.2lf%", percent);
 		usleep(UPLOAD_INTERVAL);
 		
 	}
+	printf("\b\b\b\b\b");
 	printf("done uploading %d bytes\n", bytes_transmit);
 	fclose(songFile);
 	
