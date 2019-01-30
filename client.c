@@ -441,7 +441,7 @@ void send_upsong(char* filename)
 	memcpy(buffer, &(msg.commandType), 1);
 	memcpy(buffer + 1, &(msg.songSize), 4);
 	memcpy(buffer + 5, &(msg.songNameSize), 1);
-	strcpy(buffer + 5, filename);
+	strcpy(buffer + 6, filename);
 	//memcpy(buffer + 6, &(msg.replyType), 1);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
 	{
