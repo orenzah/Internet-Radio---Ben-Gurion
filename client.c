@@ -572,7 +572,7 @@ void got_newstations(char* buffer)
 	memcpy(&(msg.replyType), buffer,	1);
 	memcpy(&(msg.station_number), buffer + 1,	2);
 	msg.station_number = ntohs(msg.station_number);
-	printf("server announced on the new station %d\n\r", msg.station_number);
+	printf("server announced on the new station %d\n\r", msg.station_number + 1);
 	//printf("got new stations\n");
 	//TODO something with the new song
 }
