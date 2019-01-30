@@ -515,6 +515,10 @@ void upload_song(char* filename)
 		{
 			if ( errno == EAGAIN)
 			{
+				for (j = 0; j < printed; j++)
+				{
+					printf("\b");
+				}
 				printf("\b\b\b\b\b\btimeout reached\n");
 			}
 			perror("send");
