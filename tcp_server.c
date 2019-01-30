@@ -182,7 +182,7 @@ void song_transmitter(void* arg)
 			{
 					usleep(micro);
 			}
-			//printf("Delay by: %f\n", (0.25 - cpu_time_used));
+			printf("Delay by: %f\n", (0.25 - cpu_time_used));
 			
 			
 			start = clock();
