@@ -307,11 +307,11 @@ void main(int argc, char* argv[])
 		args[0] = 2; //how many args been passed
 		(*pfd) 	= new_fd;
 		args[1] = pfd;
-		long* client_id = (long*)malloc(sizeof(long));
+		int* client_id = (int*)malloc(sizeof(int));
 		*client_id = clients;
 		clients++;
 		args[2] = client_id;
-		
+		printf("client_id: %d\n", *client_id);
 		cascadeClient(new_fd, client_id, &clientsList);
 		printf("server: got new connection with fd=%d\n", new_fd);
 		pthread_create(thread_pt, NULL, th_tcp_control, args);
@@ -322,7 +322,7 @@ void main(int argc, char* argv[])
 
 void *th_tcp_control(void **args)
 {
-	long mytype	= *((int*)args[2]);
+	int mytype	= *((int*)args[2]);
 	int client_fd = *((int*)args[1]);
 	char buffer[BUFFER_SIZE] = {0};
 	
@@ -379,10 +379,11 @@ void *th_tcp_control(void **args)
 		send(client_fd, buf2snd, struct_size, 0);
 		free(buf2snd);
 	}
+	printf("line382: mytype %d\n",mytype);
 	while(1)
 	{
 		msgbox mymsg = {0};
-		
+		/*
 		int msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype, IPC_NOWAIT);
 		int newstation = 0;
 		if(msg_bytes > 0)
@@ -391,6 +392,7 @@ void *th_tcp_control(void **args)
 			//printf("%10s\n",mymsg.text);
 			//printf("strcmp: %d\n", strcmp(mymsg.text, "newstatio"));
 			newstation = (strcmp(mymsg.text, "newstatio") == 0)*1;
+			printf("msgbox rcvd: %s\n", mymsg.text);
 		}
 		
 		if (newstation)
@@ -402,11 +404,12 @@ void *th_tcp_control(void **args)
 			size_t size_send = 3;//sizeof(temp_msg);
 			char msgBuf[100] = {0};
 			memcpy(msgBuf, &(temp_msg.replyType), 1);
-			memcpy((uint16_t*)(msgBuf + 1), &(temp_msg.replyType), 2);
+			memcpy((uint16_t*)(msgBuf + 1), &(temp_msg.station_number), 2);
 			//memcpy(msgBuf, &temp_msg, size_send);
 			send(client_fd, msgBuf, size_send, 0);
 			newstation = 0;			
 		}
+		*/
 		//TODO finish msg box
 		ssize_t numBytesRcvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
 		if (numBytesRcvd == 0) 
@@ -415,19 +418,25 @@ void *th_tcp_control(void **args)
 
 			printf("closing socket and thread\n");
 			client_node* temp = clientsList;
-			if ((temp->prev) == NULL)
+			printf("temp is: %p\n", temp);
+			while (temp && (temp->clientId != mytype))
 			{
-				clientsList = temp->next;
-			}
-			else
-			{
-				while (temp && (temp->clientId != mytype))
+				printf("temp->next is: %p\n", temp->next);	
+				if ((temp->next) == NULL)
 				{
-					temp = temp->next;
-				}
-				(temp->prev)->next = temp->next;
+					printf("here\n");
+					break;
+				}	
+				temp = temp->next;			
 			}
+			if (temp->prev)
+				(temp->prev)->next = temp->next;
+			if (temp->next)
+				(temp->next)->prev = temp->prev;
+
+			printf("temp is: %p\n", temp);
 			free(temp);
+			printf("client_fd is: %d\n", client_fd);
 			close(client_fd);
 			pthread_exit(0);
 		}
@@ -595,13 +604,26 @@ void send_newstation(int fd)
 }
 void init_newstations_procedure(void)
 {
-	msgbox mymsg = {0};
+	//msgbox mymsg = {0};
 	client_node* temp = clientsList;
-	strcpy(mymsg.text, "newstatio");
+	//strcpy(mymsg.text, "newstatio");
+	newstations_msg temp_msg = {0};
+	temp_msg.replyType = 4;
+	temp_msg.station_number = htons(clients - 1);
+	size_t size_send = 3;//sizeof(temp_msg);
+	char msgBuf[100] = {0};
+	memcpy(msgBuf, &(temp_msg.replyType), 1);
+	memcpy((uint16_t*)(msgBuf + 1), &(temp_msg.station_number), 2);
+	//memcpy(msgBuf, &temp_msg, size_send);
+	
 	while (temp)
 	{
+		/*
 		mymsg.mtype = temp->clientId;
+		printf("mymsg.mtype: %d\n", mymsg.mtype);
 		msgsnd(msqid, &mymsg, sizeof(mymsg), 0);
+		*/
+		send(temp->fileDescriptor, msgBuf, size_send, 0);
 		temp = temp->next;
 	}
 }

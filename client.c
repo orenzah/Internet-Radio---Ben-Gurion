@@ -263,6 +263,7 @@ void main(int argc, char* argv[])
 	printf("Exit:\nquit 0\n\r");
 	printf("> \r");
 	int retval = 0;
+	fflush(stdin);
 	while(1)
 	{
 		FD_ZERO(&readfds);
@@ -291,10 +292,12 @@ void main(int argc, char* argv[])
 				read_stdin();
 				
 			}
+			
 			if (FD_ISSET(sockfd, &readfds))
 			{
 				read_socket(sockfd);
 			}
+			
 			
 		}
 
@@ -305,8 +308,9 @@ void read_stdin()
 {
 	char user_cmd[100] = {0};
 	int  user_arg = -1;
+	printf("enter input: ");
 	scanf("%s", &user_cmd);
-	
+	printf("\nafter input\n");
 	int type = get_cmd_type(user_cmd);
 	switch(type)
 	{
@@ -328,7 +332,7 @@ void read_stdin()
 				scanf("%d", &chg_stat);
 				msgbox_player udp_msg = {0};
 				udp_msg.mtype = 3;
-				sprintf(udp_msg.buf, "%d", chg_stat);			
+				sprintf(udp_msg.buf, "%d", chg_stat - 1);			
 				msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
 				// TODO change station
 			}

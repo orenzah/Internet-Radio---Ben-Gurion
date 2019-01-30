@@ -76,27 +76,22 @@ struct client_node
 	struct client_node* prev;
 } typedef client_node;
 
-void cascadeClient(int fd, int id, client_node** node)
+void cascadeClient(int fd, int* id, client_node** node)
 {
+	client_node* head = *node;
 	client_node*  temp = (client_node*)malloc(sizeof(client_node));
-	if (*node == NULL)
-	{
-		(*node) = temp;
-		(*node)->fileDescriptor = fd;
-		(*node)->clientId		= id;
-		(*node)->next = NULL;
-		(*node)->prev = NULL;
-		return;
-	}
-	while ((*node)->next)
-	{
-		(*node) = (*node)->next;
-	}
-	(*node)->next = temp;
-	temp->prev = (*node);
-	
+	temp->next = head;
+	temp->prev = 0;
 	temp->fileDescriptor = fd;
-	temp->clientId		= id;
-	temp->next = NULL;
+	printf("mytype: %d\n", *id);
+	temp->clientId		= *id;
+	printf("cascade fd: %d\n", fd);
+	printf("temp is: %p\n", temp);
+	if (head)
+	{
+		head->prev = temp;
+	}
+	(*node) = temp;
+	
 	return;
 }
