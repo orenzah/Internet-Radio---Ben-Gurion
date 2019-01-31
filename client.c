@@ -291,7 +291,6 @@ void main(int argc, char* argv[])
 	printf("%s", KGRN);
 	printf("#########################\n");
 	printf("%s\n", KNRM);
-	printf("> \r");
 	int retval = 0;
 	fflush(stdin);
 	while(1)
@@ -338,9 +337,7 @@ void read_stdin()
 {
 	char user_cmd[100] = {0};
 	int  user_arg = -1;
-	printf("enter input: ");
 	scanf("%s", &user_cmd);
-	printf("\nafter input\n");
 	int type = get_cmd_type(user_cmd);
 	switch(type)
 	{

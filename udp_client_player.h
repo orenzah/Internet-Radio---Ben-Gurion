@@ -145,6 +145,7 @@ void udp_player(void* arg)
 		if (msg_bytes > 0)
 		{
 			close(sd);
+			pclose(player);
 			//char *a = (char*)malloc(10);;
 			//pthread_exit((void*)a);
 			pthread_exit(0);
