@@ -83,8 +83,16 @@ void cascadeClient(int fd, int* id, client_node** node)
 	temp->next = head;
 	temp->prev = 0;
 	temp->fileDescriptor = fd;
-	printf("mytype: %d\n", *id);
-	temp->clientId		= *id;
+	
+	if (id > 0)
+	{
+		printf("mytype: %d\n", *id);
+		temp->clientId		= *id;
+	}
+	else
+	{
+		temp->clientId = -1;
+	}
 	printf("cascade fd: %d\n", fd);
 	printf("temp is: %p\n", temp);
 	if (head)

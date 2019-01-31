@@ -42,7 +42,7 @@ void udp_player(void* arg)
 	int cnt_bytes = 0;
     unsigned long i = 0;
     
-    printf("msqid: %d\n", msqid);
+    //printf("msqid: %d\n", msqid);
     FILE *fp;
     
     //struct station *station = argv;
@@ -54,7 +54,7 @@ void udp_player(void* arg)
 	{
 		
 		strcpy(ip_string, mymsg.buf);
-		printf("ip got: %16s\n",ip_string);
+		//printf("ip got: %16s\n",ip_string);
 	}
 	else
 	{
@@ -74,7 +74,7 @@ void udp_player(void* arg)
 		pthread_exit(0);
 	}
     mc_grp = inet_addr(ip_string);
-    printf("ip %x\n", mc_grp);
+    //printf("ip %x\n", mc_grp);
     mc_grp_old = mc_grp;
     
 	sd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
@@ -83,10 +83,7 @@ void udp_player(void* arg)
 		perror("Opening datagram socket error");
 		exit(1);
 	} 
-	else
-	{
-		printf("Opening datagram socket....OK\n");
-	}
+
     //pthread_cleanup_push(&close, sd);
 
 	/* Enable SO_REUSEADDR to allow multiple instances of this */
@@ -99,8 +96,7 @@ void udp_player(void* arg)
 		close(sd);
 		exit(1);
 	}
-	else
-		printf("Setting SO_REUSEADDR...OK\n");
+
 	}
 
 	/* Bind to the proper port number with the IP address */
@@ -109,7 +105,7 @@ void udp_player(void* arg)
 	localSock.sin_family = AF_INET;
 	localSock.sin_port = htons(port);
 	localSock.sin_addr.s_addr = htonl(INADDR_ANY);
-	printf("ip: %d\n", localSock.sin_addr.s_addr);
+	//printf("ip: %d\n", localSock.sin_addr.s_addr);
 
 
 	if(bind(sd, (struct sockaddr*)&localSock, sizeof(localSock))) {

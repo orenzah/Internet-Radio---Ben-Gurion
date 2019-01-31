@@ -18,7 +18,9 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <time.h>
-
+       #include <sys/socket.h>
+       #include <linux/if_packet.h>
+       #include <net/ethernet.h> /* the L2 protocols */
 
 #include "tcp_server.h"
 #define MYPORT 3456    /* the port users will be connecting to */
@@ -26,7 +28,11 @@
 #define BUFFER_SIZE 1024
 #define MAX_SONGS 30
 
-
+struct alloc_t
+{
+	void* p;
+	struct alloc_t* next;
+} typedef alloc_t;
 
 
 /* Global variables */
@@ -42,6 +48,8 @@ key_t	msg_boxes[100]	= {0};
 int		clients			= 1;		
 client_node* clientsList = 0;
 
+alloc_t* allocations = 0;
+
 /* functions declarations */
 void*				th_tcp_control(void **args);
 int					get_msg_type(char * buffer, size_t size);
@@ -50,48 +58,115 @@ int					get_asksong_station(char * buffer, size_t size);
 void print_ip(uint32_t ip);
 void create_songs();
 void create_song_transmitter();
-
-/*void signalStopHandler(int signo)
+void* malloc_and_cascade(size_t size)
 {
-	if (signo != SIGSTP)
+	//printf("going to allocate\n");
+	if (!allocations)
+	{
+		void* p = malloc(size);
+		alloc_t* ps = (alloc_t*)malloc(sizeof(alloc_t));
+		ps->p = p;
+		ps->next = 0;
+		allocations = ps;
+		return p;
+	}
+	else
+	{
+		alloc_t* temp = allocations;
+		void* p = malloc(size);
+		alloc_t* ps = (alloc_t*)malloc(sizeof(alloc_t));
+		ps->p = p;
+		ps->next = 0;
+		while (temp->next)
+		{
+			temp = temp->next;
+		}
+		temp->next = ps;
+		//printf("allocated %p with size %u\n", ps, size);
+		return p;
+	}
+}
+void free_and_decascade(void* p)
+{
+	//printf("dealloc %p\n", p);
+	alloc_t* temp = allocations;
+	alloc_t* prev = 0;
+	
+	if (allocations && (allocations->p == p))
+	{
+		free(p);
+		free(allocations);
+		allocations = 0;
+		return;
+	}
+	while (temp->next)
+	{
+		prev = temp;
+		if (temp->p == p)
+		{
+			prev->next = temp->next;
+			free(p);
+			free(temp);
+			return;
+		}
+		
+		temp = temp->next;
+		
+	}
+	
+	
+}
+void free_all_fd(client_node* head)
+{
+	if (head->next)
+	{
+		free_all_fd(head->next);
+	}
+	else
 	{
 		return;
 	}
 	
-	client_node* temp;
-	while (clientsList)
+	close(head->fileDescriptor);
+	free(head);
+}
+void free_all(alloc_t* tof)
+{
+	if (tof->next)
 	{
-		temp = clientsList;
-		clientsList = clientsList->next;
-		close(temp->fileDescriptor);
-		free(temp);
+		free_all(tof->next);
 	}
+	else
 	{
-		int i;
-		for (i = 0; i < MAX_SONGS; i++)
-		{
-			if (song_arr[i].name == 0)
-			{
-				break;
-			}
-			free(song_arr[i].name);
-			pthread_cancel(*(song_arr[i].thread_p));
-			pthread_join(*(song_arr[i].thread_p),0);
-			free((song_arr[i].thread_p));
-		}
+		return;
 	}
+	free(tof->p);
+	free(tof);
+	return;
+}
+void signalStopHandler(int signo)
+{
+	if (signo != SIGINT)
+	{
+		return;
+	}
+	printf("freeing all\n");
+	free_all_fd(clientsList);
+	free_all(allocations);
 	exit(0);
 	
 }
-*/
+
+
 void song_transmitter(void* arg)
 {
 	int station = *((int*)arg);
-	free(arg);
-	int sd;
+	free_and_decascade(arg);
+	int sd, raw_sd;
 	int i;
 	struct ip_mreq group;
 	FILE* inputfile = fopen(song_arr[station].name,"rb");
+	cascadeClient(fileno(inputfile),0 ,&clientsList);
 	printf("song file name: %s\n", song_arr[station].name);
 	
 	struct sockaddr_in multicastAddr;
@@ -100,7 +175,10 @@ void song_transmitter(void* arg)
 
 	int n;
 	
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sd = socket(AF_INET, SOCK_DGRAM, 0 & IPPROTO_UDP);
+
+	printf("sd %d\n", sd);
+	
 	int reuse = 1;
 	if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) 
 	{
@@ -108,6 +186,11 @@ void song_transmitter(void* arg)
 	    close(sd);
 	    exit(1);
 	}
+
+	
+	int so_broadcast = 1;
+
+	int z = setsockopt(sd,	IPPROTO_IP,	SO_BROADCAST, &so_broadcast, sizeof (so_broadcast));
 	/* Bind to the proper port number with the IP address */
 	/* specified as INADDR_ANY. */
 /*
@@ -117,24 +200,34 @@ void song_transmitter(void* arg)
 	localSock.sin_addr.s_addr = mc_grp;
 	*/
 	group.imr_multiaddr.s_addr = mcast_g + (station << 24);
-	group.imr_interface.s_addr = inet_addr("0.0.0.0");
-	
+	group.imr_interface.s_addr = INADDR_ANY;
+	//group.imr_ifindex = if_nametoindex("eno1");
+
 	int mutlicastttl = 255;
 	
-	
+	struct in_addr localInterface;
+	localInterface.s_addr = inet_addr("132.72.110.67");
+	if(setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0)
+	{
+	  perror("Setting local interface error");
+	  exit(1);
+	}
+	if(setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, (void*)&mutlicastttl, sizeof(mutlicastttl)) < 0) 
+	{
+		perror("Adding ttl multicast group error");
+		close(sd);
+		exit(1);
+	} 
 	if(setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void*)&group, sizeof(group)) < 0) 
 	{
 		perror("Adding multicast group error");
 		close(sd);
 		exit(1);
 	}
+	
 
-	if(setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, (void*)&mutlicastttl, sizeof(mutlicastttl)) < 0) 
-	{
-		perror("Adding multicast group error");
-		close(sd);
-		exit(1);
-	} 
+	
+
 
 	/* Construct local address structure */
 	memset(&multicastAddr, 0, sizeof(multicastAddr));   /* Zero out structure */
@@ -160,13 +253,20 @@ void song_transmitter(void* arg)
 			c = fread(songBuffer, 1, 1024, inputfile);
 			
 		}	
-			
+		
 		if(sendto(sd, songBuffer, 1024, 0, (struct sockaddr*)&multicastAddr, sizeof(multicastAddr)) == -1) 
 		{
 			perror("Writing datagram message error");
 			close(sd);
 			exit(1);
 		}
+		/*
+		if(send(raw_sd, songBuffer, 1024, 0) == -1) 
+		{
+			perror("Writing datagram message error");
+			close(sd);
+			exit(1);
+		}*/
 		bytes_streamed += 1024;
 		usleep(62500);
 		//TODO read again at section 3.3
@@ -215,7 +315,7 @@ void main(int argc, char* argv[])
 		perror("msgget");
 		exit(1);
 	}	
-	//signal(SIGSTP, signalStopHandler);
+	signal(SIGINT, signalStopHandler);
 
 	sscanf(argv[1], "%d", &tcp_port);
 	inet_pton(AF_INET, argv[2], &(mcast_g));
@@ -230,28 +330,23 @@ void main(int argc, char* argv[])
 		size_t sz = ftell(songFile);
 		song.songSize	= sz;
 		song.nameLength = length;
-		song.name = (char*)malloc(length);
+		song.name = (char*)malloc_and_cascade(length);
 		strcpy(song.name, argv[i]);
 		song.station = song_count;
-		pthread_t* songPlayer = (pthread_t*)malloc(sizeof(pthread_t));
+		pthread_t* songPlayer = (pthread_t*)malloc_and_cascade(sizeof(pthread_t));
 		song.thread_p = songPlayer;
 		song_arr[song_count] = song;
 		song_count++;
 		fclose(songFile);
 		
-		int* newStationPointer = (int*)malloc(sizeof(int));
+		int* newStationPointer = (int*)malloc_and_cascade(sizeof(int));
 		*newStationPointer = i-4;
 		pthread_create(songPlayer, NULL, song_transmitter,newStationPointer/* &newStation*/);
 	}
 	//create_songs();
 	
 	
-	
-	
-	head = (node*)malloc(sizeof(node));
-	head->next = NULL;
-	head->pointer = NULL;
-	
+
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	FD_ZERO(&exceptfds);
@@ -262,7 +357,7 @@ void main(int argc, char* argv[])
 		perror("socket");
 		exit(1);
 	}
-
+	cascadeClient(sockfd, 0, &clientsList);
 	my_addr.sin_family = AF_INET;         /* host byte order */
 	my_addr.sin_port = htons(tcp_port);     /* short, network byte order */
 	my_addr.sin_addr.s_addr = INADDR_ANY; /* auto-fill with my IP */
@@ -293,12 +388,12 @@ void main(int argc, char* argv[])
 			perror("accept");
 			continue;
 		}
-		pthread_t* thread_pt = (pthread_t*)malloc(sizeof(pthread_t));
-		node* temp = (node*)malloc(sizeof(node));
+		pthread_t* thread_pt = (pthread_t*)malloc_and_cascade(sizeof(pthread_t));
+		node* temp = (node*)malloc_and_cascade(sizeof(node));
 		temp->pointer = thread_pt;
 		temp->next = head;
 		head = temp;
-		int* pfd = (int*)malloc(sizeof(int));
+		int* pfd = (int*)malloc_and_cascade(sizeof(int));
 		
 		
 		//*p_key = ftok("msgFile", 1024); // Create message boxex
@@ -307,7 +402,7 @@ void main(int argc, char* argv[])
 		args[0] = 2; //how many args been passed
 		(*pfd) 	= new_fd;
 		args[1] = pfd;
-		int* client_id = (int*)malloc(sizeof(int));
+		int* client_id = (int*)malloc_and_cascade(sizeof(int));
 		*client_id = clients;
 		clients++;
 		args[2] = client_id;
@@ -346,7 +441,7 @@ void *th_tcp_control(void **args)
 		inv_msg.replySize = strlen(inv_msg.text);
 		
 		size_t buf_size = inv_msg.replySize + 2;
-		buf2snd = (char*)malloc(buf_size);
+		buf2snd = (char*)malloc_and_cascade(buf_size);
 		printf("%d\n", buf_size);
 		memcpy(buf2snd, &inv_msg, buf_size);
 		if (send(client_fd, buf2snd, buf_size, 0) == -1)
@@ -355,7 +450,7 @@ void *th_tcp_control(void **args)
 		}
 		printf("error: ");
 		printf("rude client has been connected without saying Hello\n");		
-		free(buf2snd);
+		free_and_decascade(buf2snd);
 	}
 	else
 	{
@@ -369,7 +464,7 @@ void *th_tcp_control(void **args)
 		
 		//struct_size = 1+2+4+2;
 		
-		buf2snd = (char*)malloc(struct_size);
+		buf2snd = (char*)malloc_and_cascade(struct_size);
 		memcpy(buf2snd, &(msg.replyType), 1);
 		memcpy((uint16_t*)(buf2snd + 1), &(msg.numStations), 2);
 		memcpy((uint32_t*)(buf2snd + 3), &(msg.multicastGroup), 4);
@@ -377,7 +472,7 @@ void *th_tcp_control(void **args)
 		//memcpy(buf2snd, &msg, struct_size);
 		
 		send(client_fd, buf2snd, struct_size, 0);
-		free(buf2snd);
+		free_and_decascade(buf2snd);
 	}
 	printf("line382: mytype %d\n",mytype);
 	while(1)
@@ -435,7 +530,7 @@ void *th_tcp_control(void **args)
 				(temp->next)->prev = temp->prev;
 
 			printf("temp is: %p\n", temp);
-			free(temp);
+			free_and_decascade(temp);
 			printf("client_fd is: %d\n", client_fd);
 			close(client_fd);
 			pthread_exit(0);
@@ -465,12 +560,12 @@ void *th_tcp_control(void **args)
 					printf("%s", str);
 					size_t buf_size = sizeof(announce_msg) - 100 + strlen(msg.text);
 					msg.replyType = 1;
-					buf2snd = (char*)malloc(buf_size);
+					buf2snd = (char*)malloc_and_cascade(buf_size);
 					memcpy(buf2snd, &(msg.replyType), 1);
 					memcpy(buf2snd, &(msg.songNameSize), 1);
 					memcpy(buf2snd, &(msg.text),strlen(msg.text));
 					send(client_fd, buf2snd, struct_size, 0);
-					free(buf2snd);
+					free_and_decascade(buf2snd);
 				}
 				break;
 			case 2: /*	Client UpSong */				
@@ -507,10 +602,10 @@ void *th_tcp_control(void **args)
 					}
 					
 					/*TODO: check mutex, then answer permit*/
-					buf2snd = (char*)malloc(2);
+					buf2snd = (char*)malloc_and_cascade(2);
 					memcpy(buf2snd, &msg, 2);
 					send(client_fd, buf2snd, 2, 0);
-					free(buf2snd);
+					free_and_decascade(buf2snd);
 					printf("after reply\n");
 					if (msg.permit_value)
 					{
@@ -518,7 +613,7 @@ void *th_tcp_control(void **args)
 						song_node song = {0};
 						char songBuffer[BUFFER_SIZE] = {0};
 						int len = 0, remain_data = theSong.songSize;
-						char* songNameText = (char*)malloc(theSong.songNameSize*sizeof(char));
+						char* songNameText = (char*)malloc_and_cascade(theSong.songNameSize*sizeof(char));
 						strcpy(songNameText, theSong.songName);
 						FILE* newsong = fopen(songNameText, "wb");
 						
@@ -568,8 +663,8 @@ void *th_tcp_control(void **args)
 							exit(1); /* usage of exit is neccesary*/
 							//TODO fashion exit
 						}
-						pthread_t* songPlayer = (pthread_t*)malloc(sizeof(pthread_t));
-						int* newStation = (int*)malloc(sizeof(int));
+						pthread_t* songPlayer = (pthread_t*)malloc_and_cascade(sizeof(pthread_t));
+						int* newStation = (int*)malloc_and_cascade(sizeof(int));
 						*newStation = song.station;
 						pthread_create(songPlayer, NULL, song_transmitter, newStation);
 						/* Recv the upload*/
@@ -623,6 +718,8 @@ void init_newstations_procedure(void)
 		printf("mymsg.mtype: %d\n", mymsg.mtype);
 		msgsnd(msqid, &mymsg, sizeof(mymsg), 0);
 		*/
+		if (temp->clientId < 0)
+			continue;
 		send(temp->fileDescriptor, msgBuf, size_send, 0);
 		temp = temp->next;
 	}
@@ -692,7 +789,7 @@ void create_songs()
 		size_t sz = ftell(songFile);
 		song.songSize	= sz;
 		song.nameLength = length;
-		song.name = (char*)malloc(length);
+		song.name = (char*)malloc_and_cascade(length);
 		strcpy(song.name, dp->d_name);
 		song.station = song_count;
 		song_arr[song_count] = song;

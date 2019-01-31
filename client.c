@@ -24,6 +24,16 @@
 #define BUFFER_SIZE 1024
 #define MAX_SONGS 30
 #define UPLOAD_INTERVAL 8000
+
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+
 clock_t start, end;
 /* predefined enums*/
 enum permitEnum {no, yes};
@@ -229,7 +239,7 @@ void main(int argc, char* argv[])
 			
 			msgsnd(msqid, &udp_msg_ip, sizeof(udp_msg_ip), 0);
 			msgsnd(msqid, &udp_msg_port, sizeof(udp_msg_port), 0);
-			printf("client  %d\n", msqid);
+			//printf("client  %d\n", msqid);
 			/*
 			int rc;
 			pthread_attr_t attr;
@@ -250,17 +260,37 @@ void main(int argc, char* argv[])
 	}
 	
 	printf("Welcome to the Internet Radio Client\n");
-	printf("Connection has been established with: ");
+	printf("Connection has been established with:\t");
+	printf("%s", KBLU);
 	printf("%s\n", argv[1]);
-	printf("Mutlicast group address:\t");
+	printf("%s", KNRM);
+	printf("Mutlicast group address:\t\t");
+	printf("%s", KBLU);
 	print_ip(mcast_g);
-	printf("Mutlicast group port:\t\t%04d\n", mcast_p);
+	printf("%s", KNRM);
+	printf("Mutlicast group port:\t\t\t%s%04d\n", KBLU,mcast_p);
+	printf("%s", KNRM);
 	printf("Server has %d stations\n", stations_cnt);
 	printf("Usage: \n");
-	printf("Ask Song:\nasksong #\n");
-	printf("Up Song:\nupsong filename\n");
-	printf("Change Station:\nstation #\n");
-	printf("Exit:\nquit 0\n\r");
+	printf("%s", KBLU);
+	printf("#########################");
+	printf("%s", KGRN);
+	printf("#########################\n");
+	printf("%s", KNRM);
+	printf("%s", KBLU);
+	printf("#########################");
+	printf("%s", KGRN);
+	printf("#########################\n");
+	printf("%s", KCYN);
+	printf("Ask Song:\t\t|\tasksong #\n");
+	printf("Up Song:\t\t|\tupsong filename\n");
+	printf("Change Station:\t\t|\tstation #\n");
+	printf("Exit:\t\t\t|\tquit\n\r");
+	printf("%s", KBLU);
+	printf("#########################");
+	printf("%s", KGRN);
+	printf("#########################\n");
+	printf("%s\n", KNRM);
 	printf("> \r");
 	int retval = 0;
 	fflush(stdin);
