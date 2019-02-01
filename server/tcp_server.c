@@ -206,7 +206,7 @@ void song_transmitter(void* arg)
 	int mutlicastttl = 255;
 	
 	struct in_addr localInterface;
-	localInterface.s_addr = inet_addr("132.72.110.67");
+	localInterface.s_addr = INADDR_ANY;
 	if(setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0)
 	{
 	  perror("Setting local interface error");
