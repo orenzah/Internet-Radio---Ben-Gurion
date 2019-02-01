@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= -Wall -g -lpthread
-DEPS = client.h udp_client_player.h
+DEPS =  udp_client_player.h
 OBJ = client.o
 
 all: client clean
