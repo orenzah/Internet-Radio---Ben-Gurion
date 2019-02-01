@@ -86,15 +86,12 @@ void cascadeClient(int fd, int* id, client_node** node)
 	
 	if (id > 0)
 	{
-		printf("mytype: %d\n", *id);
 		temp->clientId		= *id;
 	}
 	else
 	{
 		temp->clientId = -1;
 	}
-	printf("cascade fd: %d\n", fd);
-	printf("temp is: %p\n", temp);
 	if (head)
 	{
 		head->prev = temp;

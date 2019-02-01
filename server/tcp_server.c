@@ -18,9 +18,9 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <time.h>
-       #include <sys/socket.h>
-       #include <linux/if_packet.h>
-       #include <net/ethernet.h> /* the L2 protocols */
+#include <sys/socket.h>
+#include <linux/if_packet.h>
+#include <net/ethernet.h> /* the L2 protocols */
 
 #include "tcp_server.h"
 #define MYPORT 3456    /* the port users will be connecting to */
@@ -176,8 +176,6 @@ void song_transmitter(void* arg)
 	int n;
 	
 	sd = socket(AF_INET, SOCK_DGRAM, 0 & IPPROTO_UDP);
-
-	printf("sd %d\n", sd);
 	
 	int reuse = 1;
 	if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) 
@@ -234,7 +232,10 @@ void song_transmitter(void* arg)
 	multicastAddr.sin_family = AF_INET;                 /* Internet address family */
 	multicastAddr.sin_addr.s_addr = mcast_g + (station << 24);		/* Multicast IP address */
 	multicastAddr.sin_port = htons(mcast_p);       /* Multicast port */
-	printf("Group Address: %d\n", mcast_g + (station << 24));
+	printf("Group Address: "); // %d\n", mcast_g + (station << 24));
+	print_ip( mcast_g + (station << 24));
+	
+	//printf("Group Address: %d\n", mcast_g + (station << 24));
 	clock_t start, end;
 	int bytes_streamed = 0;
 	start = clock();
@@ -300,7 +301,7 @@ void main(int argc, char* argv[])
 	struct 	sockaddr_in 	my_addr;    /* my address information */
 	struct 	sockaddr_in 	their_addr; /* connector's address information */
 	int 					sin_size;
-	
+		
 	struct 	timeval 		tv = {0};//The time wait for socket to be changed	*/
 	fd_set 					readfds, writefds, exceptfds; /*File descriptors for read, write and exceptions */
 	uint16_t tcp_port;
@@ -362,7 +363,7 @@ void main(int argc, char* argv[])
 	my_addr.sin_port = htons(tcp_port);     /* short, network byte order */
 	my_addr.sin_addr.s_addr = INADDR_ANY; /* auto-fill with my IP */
 	bzero(&(my_addr.sin_zero), 8);        /* zero the rest of the struct */
-	printf("new\n");
+	
 	if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) \
 																  == -1) {
 		perror("bind");
@@ -406,9 +407,9 @@ void main(int argc, char* argv[])
 		*client_id = clients;
 		clients++;
 		args[2] = client_id;
-		printf("client_id: %d\n", *client_id);
+		
 		cascadeClient(new_fd, client_id, &clientsList);
-		printf("server: got new connection with fd=%d\n", new_fd);
+		printf("server: got new connection with fd = %d\n", new_fd);
 		pthread_create(thread_pt, NULL, th_tcp_control, args);
 
 	
@@ -442,7 +443,7 @@ void *th_tcp_control(void **args)
 		
 		size_t buf_size = inv_msg.replySize + 2;
 		buf2snd = (char*)malloc_and_cascade(buf_size);
-		printf("%d\n", buf_size);
+	
 		memcpy(buf2snd, &inv_msg, buf_size);
 		if (send(client_fd, buf2snd, buf_size, 0) == -1)
 		{
@@ -474,7 +475,6 @@ void *th_tcp_control(void **args)
 		send(client_fd, buf2snd, struct_size, 0);
 		free_and_decascade(buf2snd);
 	}
-	printf("line382: mytype %d\n",mytype);
 	while(1)
 	{
 		msgbox mymsg = {0};
@@ -513,13 +513,10 @@ void *th_tcp_control(void **args)
 
 			printf("closing socket and thread\n");
 			client_node* temp = clientsList;
-			printf("temp is: %p\n", temp);
 			while (temp && (temp->clientId != mytype))
-			{
-				printf("temp->next is: %p\n", temp->next);	
+			{			
 				if ((temp->next) == NULL)
 				{
-					printf("here\n");
 					break;
 				}	
 				temp = temp->next;			
@@ -529,9 +526,7 @@ void *th_tcp_control(void **args)
 			if (temp->next)
 				(temp->next)->prev = temp->prev;
 
-			printf("temp is: %p\n", temp);
-			free_and_decascade(temp);
-			printf("client_fd is: %d\n", client_fd);
+			free_and_decascade(temp);			
 			close(client_fd);
 			pthread_exit(0);
 		}
@@ -555,9 +550,7 @@ void *th_tcp_control(void **args)
 					{
 						strcpy(msg.text, song_arr[station].name);
 						msg.songNameSize = song_arr[station].nameLength;
-					}
-					char str[] = "AskSong from my client!\n";
-					printf("%s", str);
+					}								
 					size_t buf_size = sizeof(announce_msg) - 100 + strlen(msg.text);
 					msg.replyType = 1;
 					buf2snd = (char*)malloc_and_cascade(buf_size);
@@ -574,7 +567,6 @@ void *th_tcp_control(void **args)
 					struct permit_msg msg = {0};
 					enum permitEnum per;
 					msg.replyType = 2;
-					printf("upsong req\n");
 					int status;
 					if((status = pthread_mutex_trylock(&fastmutex)))
 					{
@@ -606,7 +598,6 @@ void *th_tcp_control(void **args)
 					memcpy(buf2snd, &msg, 2);
 					send(client_fd, buf2snd, 2, 0);
 					free_and_decascade(buf2snd);
-					printf("after reply\n");
 					if (msg.permit_value)
 					{
 						upsong_msg theSong = get_upsong_details(buffer,numBytesRcvd);
@@ -656,7 +647,7 @@ void *th_tcp_control(void **args)
 								
 						}
 						fclose(newsong);
-						printf("song closed\n");						
+						printf("song has been closed\n");						
 						if(pthread_mutex_unlock(&fastmutex))
 						{
 							perror("mutex try lock");
