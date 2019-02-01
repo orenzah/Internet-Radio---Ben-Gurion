@@ -457,7 +457,6 @@ void *th_tcp_control(void **args)
 	{
 		struct welcome_msg msg	= {0};
 		struct_size =  9;//sizeof(struct welcome_msg);
-		printf("size of welcome: %d\n", struct_size);
 		msg.replyType			= 0;
 		msg.numStations			= htons(song_count);
 		msg.multicastGroup		= htonl(mcast_g);
