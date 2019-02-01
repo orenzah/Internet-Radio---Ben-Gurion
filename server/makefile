@@ -1,8 +1,15 @@
-CC = gcc
-CCFLAGS = -Wall -g
-DEPS = structs.h
-LIBS ?= -lpthread
-OBJS = tcp_server.c
+CC=gcc
+CFLAGS= -Wall -g -lpthread
+DEPS = tcp_server.h
+OBJ = tcp_server.o
 
-tcp_server: $(OBJS)
-	$(CC) $(CCFLAGS)  -o $@ $^ $(LIBS)
+all: server clean
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+server: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+clean:
+	@rm -f *.o core *.core 
+
