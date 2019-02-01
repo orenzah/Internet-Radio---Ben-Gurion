@@ -62,6 +62,7 @@ void udp_player(void* arg)
 		pthread_exit(0);
 	}
 	mytype = 2;
+	
 	msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype,0);
 	if (msg_bytes > 0)
 	{
@@ -135,7 +136,10 @@ void udp_player(void* arg)
 	
    FILE* player;
    player = popen("play -t mp3 -> /dev/null 2>&1", "w");
+   
    char databuf[2048] = {0};
+   
+
 	while(1)//while no change station input form user
 	{
 		int station;
@@ -146,6 +150,7 @@ void udp_player(void* arg)
 		{
 			close(sd);
 			pclose(player);
+			
 			//char *a = (char*)malloc(10);;
 			//pthread_exit((void*)a);
 			pthread_exit(0);
@@ -204,7 +209,9 @@ void udp_player(void* arg)
 			{
 				continue;
 			}
-			//printf("received %d\n", rec_bytes);						
+
+			//printf("received %d\n", rec_bytes);			
+			
 			fwrite(databuf + 28, sizeof(char),rec_bytes - 28, player);//write a buffer of size numbyts into fp
 
 		}

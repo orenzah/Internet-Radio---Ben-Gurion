@@ -157,7 +157,7 @@ void main(int argc, char* argv[])
 		herror("gethostbyname");
 		exit(1);
 	}
-	if( sscanf(argv[2],"%d", &port) == NULL)
+	if( sscanf(argv[2],"%d", &port) == 0)
 	{
 		perror("port");
 		exit(1);
