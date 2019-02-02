@@ -28,7 +28,7 @@ void print_ip_udp(uint32_t ip)
     printf("%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
 }
 
-void udp_player(void* arg)
+void* udp_player(void* arg)
 {
 	/* Create a datagram socket on which to receive. */
 	in_addr_t mc_grp;
@@ -37,15 +37,8 @@ void udp_player(void* arg)
 	int msqid = *((int*)arg);
 	struct sockaddr_in localSock;
 	struct ip_mreq group;
-	int station_num;
 	int port;
-	int cnt_bytes = 0;
-    unsigned long i = 0;
-    
-    //printf("msqid: %d\n", msqid);
-    FILE *fp;
-    
-    //struct station *station = argv;
+	               
 	msgbox_player mymsg = {0};
 	int mytype = 1;
 	int msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype,0);
@@ -58,7 +51,6 @@ void udp_player(void* arg)
 	}
 	else
 	{
-		close(sd);
 		pthread_exit(0);
 	}
 	mytype = 2;
@@ -70,8 +62,7 @@ void udp_player(void* arg)
 		sscanf(mymsg.buf, "%d", &port);
 	}
 	else
-	{
-		close(sd);
+	{		
 		pthread_exit(0);
 	}
     mc_grp = inet_addr(ip_string);
@@ -159,23 +150,10 @@ void udp_player(void* arg)
 		msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype, IPC_NOWAIT);
 		if (msg_bytes > 0)
 		{
-			int reuse = 1;
+
 			sscanf(mymsg.buf, "%d", &station);
 			printf("the new station is %d\n", station);
-			/*
-			localSock.sin_addr.s_addr = mc_grp + (station << 24);
-			int rtn = 10;
-			rtn = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
 			
-			assert(rtn == 0);
-			if(bind(sd, (struct sockaddr*)&localSock, sizeof(localSock))) 
-			{
-				perror("Binding datagram socket error");
-				close(sd);
-				exit(1);
-			} 
-			printf("ip changed to %x\n", localSock.sin_addr.s_addr);
-			*/
 			if(setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) 
 			{
 				perror("Dropping multicast group error");
@@ -191,10 +169,9 @@ void udp_player(void* arg)
 			} 
 		}		
 		
-		int size = sizeof(localSock);
+		size_t size = sizeof(localSock);
 		rec_bytes = recvfrom(sd, (char *)databuf, BUFFER_SIZE*2,  
-                0, (struct sockaddr *) &localSock, 
-                &size);
+                0, (struct sockaddr *) &localSock, (socklen_t *)&size);
         
 		if(rec_bytes < 0) 
 		{

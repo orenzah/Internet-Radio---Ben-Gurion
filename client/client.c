@@ -121,20 +121,23 @@ key_t msgbox_key;
 void read_stdin();
 void read_socket(int fd);
 int get_msg_type(char * buffer, size_t size);
+int get_cmd_type(char * buffer);
 void print_ip(uint32_t ip);
 void got_announce(char* buffer);
 void got_welcome(char* buffer);
 void send_upsong(char* filename);
+void send_asksong(int arg);
 void upload_song(char* filename);
 void got_newstations(char* buffer);
 void got_invalidCommand(char* buffer);
 void ip_to_str(char* str, uint32_t ip);
-void main(int argc, char* argv[])
+
+
+int main(int argc, char* argv[])
 {
 	
 	
 	struct 	sockaddr_in 	server_addr; /* connector's address information */
-	int 					sin_size;
 	struct 	timeval 		tv = {0};		/*The time wait for socket to be changed	*/
 	fd_set 					readfds, writefds, exceptfds; /*File descriptors for read, write and exceptions */
 	struct hostent *he;
@@ -337,8 +340,8 @@ void read_stdin()
 {
 	char user_cmd[100] = {0};
 	int  user_arg = -1;
-	scanf("%s", &user_cmd);
-	int type = get_cmd_type(user_cmd);
+	scanf("%s", (char*)&user_cmd);
+	int type = get_cmd_type((char *)user_cmd);
 	switch(type)
 	{
 		case 1:
@@ -349,7 +352,7 @@ void read_stdin()
 		case 2:
 			{
 				char filename[100] = {0};
-				scanf("%s", &filename);
+				scanf("%s", (char *)&filename);
 				send_upsong(filename);
 			}
 			break;
@@ -569,7 +572,7 @@ void upload_song(char* filename)
 	{
 		printf("\b");
 	}
-	printf("done uploading %d bytes\n", bytes_transmit);
+	printf("Upload has been done, sent %ld bytes\n", bytes_transmit);
 	fclose(songFile);
 	
 }
