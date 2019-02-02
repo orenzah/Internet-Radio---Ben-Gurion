@@ -458,7 +458,6 @@ void init_newstations_procedure(void)
 		printf("mymsg.mtype: %d\n", mymsg.mtype);
 		msgsnd(msqid, &mymsg, sizeof(mymsg), 0);
 		*/
-		printf("here\n");
 		if (temp->clientId < 0)
 		{
 			temp = temp->next;
@@ -646,7 +645,7 @@ void signalStopHandler(int signo)
 	{
 		return;
 	}
-	printf("Freeing all\n");
+	printf("\nFreeing all\n");
 	free_all_fd(clientsList);
 	free_all(allocations);
 	exit(0);
