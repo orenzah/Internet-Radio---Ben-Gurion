@@ -124,10 +124,16 @@ int main(int argc, char* argv[])
 
 	
 
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) 
+	{
 		perror("socket");
 		exit(1);
 	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0)
+	{
+		perror("setsockopt(SO_REUSEADDR) failed");
+	}
+    
 	cascadeClient(sockfd, 0, &clientsList);
 	my_addr.sin_family = AF_INET;         /* host byte order */
 	my_addr.sin_port = htons(tcp_port);     /* short, network byte order */
@@ -603,7 +609,7 @@ void free_all_fd(client_node* head)
 	{
 		return;
 	}
-	
+	printf("closing: %d\n", head->fileDescriptor);
 	close(head->fileDescriptor);
 	free(head);
 }
@@ -667,10 +673,8 @@ void* song_transmitter(void* arg)
 	    exit(1);
 	}
 
-	
 
 
-	
 
 	group.imr_multiaddr.s_addr = mcast_g + (station << 24);
 	group.imr_interface.s_addr = INADDR_ANY;
