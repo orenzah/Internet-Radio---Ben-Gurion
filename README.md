@@ -1,8 +1,8 @@
 # Welcome to The Internet Radio Application Project
 Computers Networks 2 - 371-1-0211
-[Moodle](https://moodle2.bgu.ac.il/moodle/course/view.php?id=23418).\n
-[Book Manual](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%202018.pdf)\n
-[Presentation Manaul](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%20Presentation.pdf)\n
+[Moodle](https://moodle2.bgu.ac.il/moodle/course/view.php?id=23418).\
+[Book Manual](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%202018.pdf)\
+[Presentation Manaul](https://github.com/orenzah/Internet-Radio---Ben-Gurion/blob/master/Internet%20Radio%20Application%20Presentation.pdf)\
 
 ## Description
 
