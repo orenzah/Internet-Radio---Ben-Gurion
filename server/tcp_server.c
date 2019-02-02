@@ -285,9 +285,13 @@ void *th_tcp_control(void *parg)
 			case 1: /*	Client AskSong */
 				/*TODO: Server tell client Announce*/
 				{
+					
 					announce_msg msg = {0};
-					uint16_t station = get_asksong_station(buffer, numBytesRcvd);
-					struct_size =  sizeof(struct announce_msg);
+					uint16_t station = get_asksong_station(buffer, numBytesRcvd);					
+					if (station > 100)
+						break;
+					struct_size =  sizeof(struct announce_msg);					
+					
 					if(song_arr[station].name == NULL)
 					{
 						msg.songNameSize	= 0;
@@ -297,13 +301,13 @@ void *th_tcp_control(void *parg)
 					{
 						strcpy(msg.text, song_arr[station].name);
 						msg.songNameSize = song_arr[station].nameLength;
-					}								
-					size_t buf_size = sizeof(announce_msg) - 100 + strlen(msg.text);
+					}							
+					size_t buf_size = struct_size - 100 + strlen(msg.text);
 					msg.replyType = 1;
 					buf2snd = (char*)malloc_and_cascade(buf_size);
 					memcpy(buf2snd, &(msg.replyType), 1);
-					memcpy(buf2snd, &(msg.songNameSize), 1);
-					memcpy(buf2snd, &(msg.text),strlen(msg.text));
+					memcpy(buf2snd + 1, &(msg.songNameSize), 1);
+					memcpy(buf2snd + 2, msg.text,strlen(msg.text));
 					send(client_fd, buf2snd, struct_size, 0);
 					free_and_decascade(buf2snd);
 				}
@@ -378,7 +382,7 @@ void *th_tcp_control(void *parg)
 							}
 							if (len >= remain_data)
 							{
-								printf("remain data: %d\n", remain_data);
+								//printf("remain data: %d\n", remain_data);
 								fwrite(songBuffer, sizeof(char), remain_data, newsong);
 								break;
 							}
@@ -407,6 +411,8 @@ void *th_tcp_control(void *parg)
 						pthread_create(songPlayer, NULL, song_transmitter, newStation);
 						/* Recv the upload*/
 						init_newstations_procedure();
+						printf("done\n");
+						continue;
 					}
 				}
 				break;
@@ -452,10 +458,15 @@ void init_newstations_procedure(void)
 		printf("mymsg.mtype: %d\n", mymsg.mtype);
 		msgsnd(msqid, &mymsg, sizeof(mymsg), 0);
 		*/
+		printf("here\n");
 		if (temp->clientId < 0)
+		{
+			temp = temp->next;
 			continue;
+		}
 		send(temp->fileDescriptor, msgBuf, size_send, 0);
 		temp = temp->next;
+		
 	}
 }
 int get_msg_type(char * buffer, size_t size)
@@ -481,7 +492,9 @@ int	get_asksong_station(char * buffer, size_t size)
 	struct asksong_msg msg =	{0};
 	memcpy(&(msg.replyType), buffer, 1);
 	memcpy(&(msg.station_number), buffer + 1, 2);
-	msg.station_number = ntohs(msg.station_number);
+	msg.station_number = ntohs(msg.station_number) - 1;
+	if (msg.station_number < 0)
+		return 0;
 	return msg.station_number;
 }
 
@@ -609,7 +622,7 @@ void free_all_fd(client_node* head)
 	{
 		return;
 	}
-	printf("closing: %d\n", head->fileDescriptor);
+	//printf("closing: %d\n", head->fileDescriptor);
 	close(head->fileDescriptor);
 	free(head);
 }
@@ -633,7 +646,7 @@ void signalStopHandler(int signo)
 	{
 		return;
 	}
-	printf("freeing all\n");
+	printf("Freeing all\n");
 	free_all_fd(clientsList);
 	free_all(allocations);
 	exit(0);

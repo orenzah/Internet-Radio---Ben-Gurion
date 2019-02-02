@@ -102,8 +102,9 @@ struct announce_msg
 	char	text[100];
 } typedef announce_msg;
 /* Global variables */
-int		msg_await = 0;
-int		msg_waiting[5] = {0};
+int			msg_await = 0;
+int			msg_waiting[5] = {0};
+clock_t		clocks_waiting[5] = {0};
 
 int 					sockfd, new_fd;  /* listen on sock_fd, new connection on new_fd */
 node*	head;
@@ -184,7 +185,7 @@ int main(int argc, char* argv[])
 
 	server_addr.sin_family = AF_INET;         /* host byte order */
 	server_addr.sin_port = htons(port);     /* short, network byte order */
-	server_addr.sin_addr = *((struct in_addr *)he->h_addr); /* auto-fill with my IP */
+	server_addr.sin_addr =   *((struct in_addr *)he->h_addr); /* auto-fill with my IP */
 	bzero(&(server_addr.sin_zero), 8);        /* zero the rest of the struct */
 	
 	
@@ -211,7 +212,7 @@ int main(int argc, char* argv[])
 	{
 		if (errno == EAGAIN)
 		{
-			printf("timeout: server is not responding to Hello Message\n");
+			printf("%sTimeout%s: server is not responding to Hello Message\n", KRED, KNRM);
 			close(sockfd);
 			exit(1);
 		}
@@ -224,7 +225,6 @@ int main(int argc, char* argv[])
 	if (numbytes > 0)
 	{
 		int type = -1;
-		//printf("got reply: \r");
 		type = get_msg_type(buf, numbytes);
 		if (type == 0)
 		{
@@ -332,6 +332,28 @@ int main(int argc, char* argv[])
 			
 			
 		}
+		int k;
+		for (k= 0; k < 6; k++)
+		{
+			if (msg_waiting[k])
+			{				
+				double elapsed_secs = (((double)clock() - clocks_waiting[k]) / CLOCKS_PER_SEC);
+				if (elapsed_secs > 0.3)
+				{
+					printf("%sTimeout%s: %lf\n", KRED, KNRM, elapsed_secs);
+					printf("%sClosing%s: Due to missing msg of type: %d\n", KRED, KNRM, k);
+					
+					close(sockfd);
+					msgbox_player udp_msg = {0};
+					udp_msg.mtype = 5;
+					msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
+
+					pthread_join(*udp_player_th, 0);
+					free(udp_player_th);
+					exit(0);
+				}
+			}
+		}
 
 	}
 
@@ -373,13 +395,9 @@ void read_stdin()
 			
 			msgbox_player udp_msg = {0};
 			udp_msg.mtype = 5;
-			msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
-			//void *j;
-			//pthread_join(*udp_player_th, (void**)&j);
-			pthread_join(*udp_player_th, 0);
-			
-			free(udp_player_th);
-			
+			msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);			
+			pthread_join(*udp_player_th, 0);			
+			free(udp_player_th);			
 			exit(0);
 			break;
 		default:
@@ -392,21 +410,17 @@ void read_socket(int fd)
 {
 	size_t numbytes = 0;
 	char buffer[BUFFER_SIZE] = {0};
-	if ((numbytes = recv(fd, buffer,BUFFER_SIZE,0)) == -1)
-	{
-		perror("recv");
-		exit(1);
-	}
+	numbytes = recv(fd, buffer, BUFFER_SIZE, 0);
+	
 	if (numbytes > 0)
 	{
 		int type = -1;
-		//printf("got reply: \r");
 		type = get_msg_type(buffer, numbytes);
-		msg_waiting[type] = 0;
+		msg_waiting[type] = 0;			
 		switch(type)
 		{
 			case 1:
-			got_announce(buffer);
+				got_announce(buffer);
 				break;
 			case 2:
 				break;
@@ -422,8 +436,41 @@ void read_socket(int fd)
 		}
 		
 	}
+	else
+	{
+		close(fd);
+		msgbox_player udp_msg = {0};
+		udp_msg.mtype = 5;
+		msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);
+		pthread_join(*udp_player_th, 0);
+		free(udp_player_th);
+		if (numbytes == -1)
+		{
+			if (errno == EAGAIN)
+			{
+				printf("%sTimeout%s: server is not responding\n", KRED, KNRM);
+				close(sockfd);
+				exit(1);
+			}
+			else
+			{
+				perror("recv");
+				close(sockfd);
+				exit(1);
+			}
+		}
+		else
+		{	
+			printf("%s###########%s######%s###############%s\n", KRED, KNRM, KRED, KNRM);
+			printf("Server has %sclosed%s the connection\n", KRED, KNRM);
+			printf("%s###########%s######%s###############%s\n", KRED, KNRM, KRED, KNRM);
+			exit(0);
+		}
+		exit(0);
+		
+	}
 }
-int get_msg_type(char * buffer, size_t num)
+int get_msg_type(char *buffer, size_t num)
 {
 	uint8_t	type;
 	memcpy(&type, buffer, sizeof(uint8_t));
@@ -447,6 +494,7 @@ void send_asksong(int arg)
 	msg.stationNumber = arg;
 	char buffer[sizeof(msg)] = {0};
 	memcpy(buffer, &msg, sizeof(msg));
+	msg.stationNumber = htons(msg.stationNumber);
 	memcpy(buffer + 1, &(msg.stationNumber), 2);
 	msg.stationNumber = ntohs(msg.stationNumber);
 	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
@@ -454,8 +502,8 @@ void send_asksong(int arg)
 		perror("send");
 		exit(1);
 	}
-	start = clock();
 	msg_waiting[1] = 1;
+	clocks_waiting[1] = clock();
 	
 }
 
@@ -493,7 +541,15 @@ void send_upsong(char* filename)
 	{
 		if (errno == EAGAIN)
 		{
-			printf("timeout reached\n");
+			printf("%sTimeout%s has been reached\n", KRED, KNRM);
+			printf("%sFashion%s exit\n", KMAG, KNRM);		
+			close(sockfd);
+			msgbox_player udp_msg = {0};
+			udp_msg.mtype = 5;
+			msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);			
+			pthread_join(*udp_player_th, 0);			
+			free(udp_player_th);			
+			exit(1);
 		}
 		
 		perror("recv");
@@ -504,7 +560,15 @@ void send_upsong(char* filename)
 	if (type != 2)
 	{
 		//TODO fashion exit
+		printf("%sInvalid Command%s has been received\n", KRED, KNRM);
+		printf("%sFashion%s exit\n", KMAG, KNRM);
+		
 		close(sockfd);
+		msgbox_player udp_msg = {0};
+		udp_msg.mtype = 5;
+		msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);			
+		pthread_join(*udp_player_th, 0);			
+		free(udp_player_th);			
 		exit(1);
 	}
 	else
@@ -516,12 +580,9 @@ void send_upsong(char* filename)
 		}
 		else
 		{
-			printf("the server answered 'Yesh li Haver'.\nbitch...\n");
-		}
-		
+			printf("The server answered '%sYesh li Haver%s'.\n%sbitch%s...\n", KGRN, KNRM, KGRN, KNRM);
+		}		
 	}
-	msg_waiting[2] = 1;
-	
 }
 void upload_song(char* filename)
 {
@@ -532,7 +593,7 @@ void upload_song(char* filename)
 	fseek(songFile, 0L, SEEK_SET);
 	//printf("the first char: %d\n", fgetc(songFile));
 	fseek(songFile, 0L, SEEK_SET);
-	printf("start uploading\n");
+	printf("Start uploading\n");
 	clearerr(songFile);
 	size_t bytes_transmit = 0;
 	struct 	timeval tv = {0};		/*The time wait for socket to be changed	*/
@@ -547,13 +608,20 @@ void upload_song(char* filename)
 		bytes = fread(songBuffer, sizeof(char), 1024, songFile);
 		if (send(sockfd, songBuffer, bytes,0) == -1)
 		{
-			if ( errno == EAGAIN)
+			if (errno == EAGAIN)
 			{
 				for (j = 0; j < printed; j++)
 				{
 					printf("\b");
 				}
-				printf("\b\b\b\b\b\btimeout reached\n");
+				printf("%sTimeout%s reached\n", KRED, KNRM);
+				close(sockfd);
+				msgbox_player udp_msg = {0};
+				udp_msg.mtype = 5;
+				msgsnd(msqid, &udp_msg, sizeof(udp_msg), 0);			
+				pthread_join(*udp_player_th, 0);			
+				free(udp_player_th);			
+				exit(1);
 			}
 			perror("send");
 			exit(1);
@@ -574,6 +642,8 @@ void upload_song(char* filename)
 	}
 	printf("Upload has been done, sent %ld bytes\n", bytes_transmit);
 	fclose(songFile);
+	msg_waiting[4] = 1;
+	clocks_waiting[4] = clock();
 	
 }
 void got_welcome(char* buffer)
@@ -593,7 +663,9 @@ void got_welcome(char* buffer)
 void got_announce(char* buffer)
 {
 	announce_msg msg = {0};
-	memcpy(&msg, buffer,	sizeof(struct announce_msg));
+	memcpy(&(msg.replyType), buffer,1);
+	memcpy(&(msg.songNameSize), buffer + 1, 1);
+	memcpy(&(msg.text), buffer + 2, msg.songNameSize);
 	printf("The song is: %s\n", msg.text);
 }
 void got_newstations(char* buffer)
@@ -602,7 +674,7 @@ void got_newstations(char* buffer)
 	memcpy(&(msg.replyType), buffer,	1);
 	memcpy(&(msg.station_number), buffer + 1,	2);
 	msg.station_number = ntohs(msg.station_number);
-	printf("server announced on the new station %d\n\r", msg.station_number + 1);
+	printf("Server %sannounced%s on the new station %d\n\r", KGRN, KNRM, msg.station_number + 1);
 	//printf("got new stations\n");
 	//TODO something with the new song
 }
