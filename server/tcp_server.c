@@ -47,7 +47,8 @@ pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 key_t	msg_boxes[100]	= {0};
 int		clients			= 1;		
 client_node* clientsList = 0;
-
+int tcp_port_g = 0;
+int 					sockfd;
 alloc_t* allocations = 0;
 
 /* functions declarations */
@@ -67,7 +68,7 @@ void* song_transmitter(void* arg);
 void signalStopHandler(int signo);
 int main(int argc, char* argv[])
 {
-	int 					sockfd, new_fd;  /* listen on sock_fd, new connection on new_fd */
+	int new_fd;  /* listen on sock_fd, new connection on new_fd */
 	struct 	sockaddr_in 	my_addr;    /* my address information */
 	struct 	sockaddr_in 	their_addr; /* connector's address information */
 	size_t 					sin_size;
@@ -134,8 +135,9 @@ int main(int argc, char* argv[])
 		perror("setsockopt(SO_REUSEADDR) failed");
 	}
     
-	cascadeClient(sockfd, 0, &clientsList);
+	//cascadeClient(sockfd, 0, &clientsList);
 	my_addr.sin_family = AF_INET;         /* host byte order */
+	tcp_port_g = tcp_port;
 	my_addr.sin_port = htons(tcp_port);     /* short, network byte order */
 	my_addr.sin_addr.s_addr = INADDR_ANY; /* auto-fill with my IP */
 	bzero(&(my_addr.sin_zero), 8);        /* zero the rest of the struct */
@@ -145,7 +147,6 @@ int main(int argc, char* argv[])
 		perror("bind");
 		exit(1);
 	}
-
 	if (listen(sockfd, BACKLOG) == -1) {
 		perror("listen");
 		exit(1);
@@ -430,7 +431,26 @@ void *th_tcp_control(void *parg)
 					if (send(client_fd, inv_buf, buf_size, 0) == -1)
 					{
 						perror("send invalid_command");
-					}					
+					}
+					printf("%sClosing%s socket and thread\n", KRED, KNRM);
+					client_node* temp = clientsList;
+					while (temp && (temp->clientId != mytype))
+					{			
+						if ((temp->next) == NULL)
+						{
+							break;
+						}	
+						temp = temp->next;			
+					}
+					if (temp->prev)
+						(temp->prev)->next = temp->next;
+					if (temp->next)
+						(temp->next)->prev = temp->prev;
+
+					free_and_decascade(temp);			
+					close(client_fd);
+					pthread_exit(0);
+									
 				}
 				break;
 		}
@@ -648,6 +668,7 @@ void signalStopHandler(int signo)
 	printf("\nFreeing all\n");
 	free_all_fd(clientsList);
 	free_all(allocations);
+	close(sockfd);
 	exit(0);
 	
 }
@@ -665,11 +686,7 @@ void* song_transmitter(void* arg)
 	printf("Song file name: %s%s%s\n", KBLU,song_arr[station].name, KNRM);
 	
 	struct sockaddr_in multicastAddr;
-	
-	
-
-	
-	
+		
 	sd = socket(AF_INET, SOCK_DGRAM, 0 & IPPROTO_UDP);
 	if (sd < 0)
 	{
