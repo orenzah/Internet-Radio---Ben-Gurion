@@ -470,7 +470,7 @@ void init_newstations_procedure(void)
 	//strcpy(mymsg.text, "newstatio");
 	newstations_msg temp_msg = {0};
 	temp_msg.replyType = 4;
-	temp_msg.station_number = htons(clients - 1);
+	temp_msg.station_number = htons(song_count);
 	size_t size_send = 3;//sizeof(temp_msg);
 	char msgBuf[100] = {0};
 	memcpy(msgBuf, &(temp_msg.replyType), 1);
