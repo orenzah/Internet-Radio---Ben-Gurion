@@ -158,7 +158,7 @@ void* udp_player(void* arg)
 		{
 
 			sscanf(mymsg.buf, "%d", &station);
-			printf("The new station is %d\n", station);
+			printf("The new station is %d\n", station + 1);
 			
 			if(setsockopt(sd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) 
 			{
