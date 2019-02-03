@@ -69,7 +69,12 @@ void* udp_player(void* arg)
     //printf("ip %x\n", mc_grp);
     mc_grp_old = mc_grp;
     
+    #ifdef WITHSUDO
 	sd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
+	#endif
+	#ifndef WITHSUDO
+	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	#endif
 	if(sd < 0) 
 	{
 		perror("Opening datagram socket error");
@@ -105,12 +110,7 @@ void* udp_player(void* arg)
 		close(sd);
 		exit(1);
 	} 
-	//localSock.sin_addr.s_addr = mc_grp;
 
-	/* Join the multicast group 226.1.1.1 on the local 0.0.0.0 */
-	/* interface. Note that this IP_ADD_MEMBERSHIP option must be */
-	/* called for each local interface over which the multicast */
-	/* datagrams are to be received. */
 
 	group.imr_multiaddr.s_addr = mc_grp_old;
 	group.imr_interface.s_addr = inet_addr("0.0.0.0");
@@ -126,7 +126,13 @@ void* udp_player(void* arg)
 	//printf("\n Station number %d playing\n",station_num);
 	
    FILE* player;
+   #ifndef VLC 
    player = popen("play -t mp3 -> /dev/null 2>&1", "w");
+   #endif
+   #ifdef VLC
+   //player = popen("play -t mp3 alsa -> /dev/null", "w");
+   player = popen("vlc - > /dev/null 2>&1", "w");
+   #endif
    
    char databuf[2048] = {0};
    
@@ -181,16 +187,20 @@ void* udp_player(void* arg)
 		}
 		else 
 		{
+			#ifdef WITHSUDO
+			
 			uint32_t dst_ip = *(uint32_t*)((databuf + 16));
 			if ( dst_ip != group.imr_multiaddr.s_addr)
 			{
 				continue;
 			}
-
-			//printf("received %d\n", rec_bytes);			
-			
 			fwrite(databuf + 28, sizeof(char),rec_bytes - 28, player);//write a buffer of size numbyts into fp
-
+			#endif
+			//printf("received %d\n", rec_bytes);			
+			#ifndef WITHSUDO
+			//fwrite(databuf + 28, sizeof(char),rec_bytes - 28, player);//write a buffer of size numbyts into fp
+			fwrite(databuf, sizeof(char),rec_bytes, player);//write a buffer of size numbyts into fp
+			#endif
 		}
 	
 	}

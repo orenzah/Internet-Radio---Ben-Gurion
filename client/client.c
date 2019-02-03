@@ -490,7 +490,7 @@ void send_asksong(int arg)
 {
 	
 	asksong_msg msg = {0};
-	msg.commandType = 1;
+	msg.commandType = 5;
 	msg.stationNumber = arg;
 	char buffer[sizeof(msg)] = {0};
 	memcpy(buffer, &msg, sizeof(msg));
