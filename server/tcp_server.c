@@ -41,7 +41,9 @@ int msqid;
 uint32_t mcast_g;
 uint16_t mcast_p;
 key_t msgbox_key = 0;
-song_node song_arr[MAX_SONGS] = {0};
+
+
+song_node song_arr[MAX_SONGS] = {{ 0 }};
 int	song_count = 0;
 pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 key_t	msg_boxes[100]	= {0};
@@ -454,7 +456,11 @@ void *th_tcp_control(void *parg)
 				}
 				break;
 		}
-		printf("Received %ld bytes from fd: %d\n", numBytesRcvd, client_fd);		
+
+
+
+
+		printf("Received %d bytes from fd: %d\n", numBytesRcvd, client_fd);		
 	}
 }
 void init_newstations_procedure(void)
