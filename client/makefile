@@ -10,9 +10,9 @@ all: client clean
 	@$(CC) -c -o $@ $< $(CFLAGS)
 
 client: $(OBJ)
-	@echo -e "${GRN}Compiling the client side${NC}"
+	@echo "${GRN}Compiling the client side${NC}"
 	@$(CC) -o $@ $^ $(CFLAGS)
-	@echo -e "${GRN}Great Success! ${NC}"
+	@echo  "${GRN}Great Success! ${NC}"
 clean:
 	@rm -f *.o core *.core 
 
