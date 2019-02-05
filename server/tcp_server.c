@@ -411,6 +411,18 @@ void *th_tcp_control(void *parg)
 							//fprintf(stdout, "Receive %d bytes and we hope : %d bytes\n", len, remain_data);
 								
 						}
+						if (len == -1)
+						{
+							if (errno == EAGAIN)
+							{
+								//Timeout occured
+								//TODO Send Invalid Command
+								printf("TODO:\n");
+								printf("Invalid command to the client\n");
+								printf("TODO:\n");
+								printf("Fashion Exit\n");
+							}
+						}
 						fclose(newsong);
 						printf("Song has been closed\n");						
 						if(pthread_mutex_unlock(&fastmutex))
