@@ -112,7 +112,7 @@ pthread_t* udp_player_th;
 volatile uint16_t stations_cnt = 0;
 uint32_t mcast_g;
 uint16_t mcast_p;
-song_node song_arr[MAX_SONGS] = {0};
+song_node song_arr[MAX_SONGS] = {{0}};
 pthread_mutex_t fastmutex = PTHREAD_MUTEX_INITIALIZER;
 key_t	msg_boxes[100]	= {0};
 int		clients			= 0;	
@@ -640,7 +640,8 @@ void upload_song(char* filename)
 	{
 		printf("\b");
 	}
-	printf("Upload has been done, sent %ld bytes\n", bytes_transmit);
+
+	printf("Upload has been done, sent %d bytes\n", bytes_transmit);
 	fclose(songFile);
 	msg_waiting[4] = 1;
 	clocks_waiting[4] = clock();
