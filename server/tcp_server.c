@@ -68,6 +68,7 @@ void free_all_fd(client_node* head);
 void free_all(alloc_t* tof);
 void* song_transmitter(void* arg);
 void signalStopHandler(int signo);
+int check_msg_size(int type , size_t numBytes, char* buffer);
 int main(int argc, char* argv[])
 {
 	int new_fd;  /* listen on sock_fd, new connection on new_fd */
@@ -283,13 +284,23 @@ void *th_tcp_control(void *parg)
 		buffer[numBytesRcvd] = '\0';
 		if(numBytesRcvd == 0)
 			continue;
-		switch(get_msg_type(buffer, numBytesRcvd))
+		int msg_type = get_msg_type(buffer, numBytesRcvd);
+		if (check_msg_size(msg_type, numBytesRcvd, buffer))
+		{
+			
+		}
+		else
+		{
+			msg_type = -1; /// Go to Invalid Command
+		}
+		switch(msg_type)
 		{
 			case 1: /*	Client AskSong */
 				/*TODO: Server tell client Announce*/
 				{
 					
 					announce_msg msg = {0};
+					
 					uint16_t station = get_asksong_station(buffer, numBytesRcvd);					
 					if (station > 100)
 						break;
@@ -799,4 +810,32 @@ void* song_transmitter(void* arg)
 		//maybe add sleep after full second passed
 	}
 	
+}
+
+int check_msg_size(int type , size_t numBytes, char* buffer)
+{
+	switch(type)
+	{
+		case 0:
+			type = type*(numBytes == 3);
+			break;
+		case 1:
+			type = type*(numBytes == 3);
+			break;	
+		case 2:
+			if (numBytes > 6)
+			{
+				uint8_t len = *(buffer + 5);
+				type = type*(numBytes == (6 + len));
+			}
+			else
+			{
+				type = 0;
+			}			
+			break;
+		default:
+			type = 0;
+			break;					
+	}
+	return type;	
 }
