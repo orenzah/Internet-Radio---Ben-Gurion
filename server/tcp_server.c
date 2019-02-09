@@ -416,11 +416,38 @@ void *th_tcp_control(void *parg)
 							if (errno == EAGAIN)
 							{
 								//Timeout occured
-								//TODO Send Invalid Command
-								printf("TODO:\n");
-								printf("Invalid command to the client\n");
-								printf("TODO:\n");
-								printf("Fashion Exit\n");
+								//Send Invalid Command
+								invalid_msg msg = {0};
+								char inv_buf[140] = {0};
+								msg.replyType = 3;
+								strcpy(msg.text, "Invalid Command has been asserted");
+								msg.replySize = strlen(msg.text);
+								size_t buf_size = msg.replySize + 2;
+								memcpy(inv_buf, &msg, buf_size);
+								if (send(client_fd, inv_buf, buf_size, 0) == -1)
+								{
+									perror("send invalid_command");
+								}
+								printf("%sClosing%s socket and thread\n", KRED, KNRM);
+								client_node* temp = clientsList;
+								while (temp && (temp->clientId != mytype))
+								{			
+									if ((temp->next) == NULL)
+									{
+										break;
+									}	
+									temp = temp->next;			
+								}
+								if (temp->prev)
+									(temp->prev)->next = temp->next;
+								if (temp->next)
+									(temp->next)->prev = temp->prev;
+
+								free_and_decascade(temp);			
+								close(client_fd);
+								fclose(newsong);
+								pthread_exit(0);
+									
 							}
 						}
 						fclose(newsong);
