@@ -454,9 +454,10 @@ void *th_tcp_control(void *parg)
 						printf("Song has been closed\n");						
 						if(pthread_mutex_unlock(&fastmutex))
 						{
-							perror("mutex try lock");
-							exit(1); /* usage of exit is neccesary*/
-							//TODO fashion exit
+							perror("mutex try lock");			
+							close(client_fd);
+							pthread_exit(0);
+							exit(1); 
 						}
 						pthread_t* songPlayer = (pthread_t*)malloc_and_cascade(sizeof(pthread_t));
 						int* newStation = (int*)malloc_and_cascade(sizeof(int));
