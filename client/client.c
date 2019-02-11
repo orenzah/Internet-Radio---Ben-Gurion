@@ -526,7 +526,7 @@ void send_upsong(char* filename)
 	strcpy(buffer + 6, filename);
 	printf("Sending upsong %s\n", filename);
 	//memcpy(buffer + 6, &(msg.replyType), 1);
-	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
+	if (send(sockfd, buffer, 1+4+1+msg.songNameSize ,0) == -1)
 	{
 		perror("send");
 		exit(1);
@@ -556,13 +556,12 @@ void send_upsong(char* filename)
 		exit(1);
 	}
 	int type = -1;
-	type = get_msg_type(temp_buffer, numbytes);
-	if (type != 2)
+	//type = get_msg_type(temp_buffer, numbytes);
+	if (0 && type != 2)
 	{
 		//TODO fashion exit
 		printf("%sInvalid Command%s has been received\n", KRED, KNRM);
 		printf("%sFashion%s exit\n", KMAG, KNRM);
-		
 		close(sockfd);
 		msgbox_player udp_msg = {0};
 		udp_msg.mtype = 5;
