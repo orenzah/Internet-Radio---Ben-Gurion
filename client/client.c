@@ -147,11 +147,13 @@ int main(int argc, char* argv[])
 	tv.tv_usec = 300000;
 	
 	key_t msg_key = ftok("./msgBox", 25);
+	
 	if ((msqid = msgget(msg_key/*Warning key_t*/, IPC_CREAT | 0666 )) < 0) 
 	{
 		perror("msgget");
 		exit(1);
 	}		
+	printf("msquid %d\n", msqid);
 	if(argc != 3)
 	{
 		fprintf(stderr, "usage: expected 2 arguments\n");
