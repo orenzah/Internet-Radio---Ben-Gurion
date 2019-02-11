@@ -41,6 +41,7 @@ void* udp_player(void* arg)
 	               
 	msgbox_player mymsg = {0};
 	int mytype = 1;
+	printf("msquid %d\n", msqid);
 	int msg_bytes = msgrcv(msqid, &mymsg, sizeof(mymsg), mytype,0);
 	char ip_string[16] = {0};
 	if (msg_bytes > 0)
