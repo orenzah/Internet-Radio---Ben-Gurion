@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 		perror("msgget");
 		exit(1);
 	}		
-	printf("msquid %d\n", msqid);
+
 	if(argc != 3)
 	{
 		fprintf(stderr, "usage: expected 2 arguments\n");
