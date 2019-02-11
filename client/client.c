@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 	int numbytes;
 	tv.tv_usec = 300000;
 	
-	key_t msg_key = ftok("msgBox", 10);
+	key_t msg_key = ftok("/tmp/msgBox", 10);
 	if ((msqid = msgget(msg_key/*Warning key_t*/, IPC_CREAT | 0666 )) < 0) 
 	{
 		perror("msgget");
@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 	hello_msg msg = {0};
 	msg.commandType = 0;
 	memcpy(buffer, &msg, sizeof(msg));
-	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
+	if (send(sockfd, buffer, 3,0) == -1)
 	{
 		perror("send");
 		exit(1);
