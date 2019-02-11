@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 	int numbytes;
 	tv.tv_usec = 300000;
 	
-	key_t msg_key = 15325235;//ftok("msgBox", 142154254);
+	key_t msg_key = ftok("./msgBox", 25);
 	if ((msqid = msgget(msg_key/*Warning key_t*/, IPC_CREAT | 0666 )) < 0) 
 	{
 		perror("msgget");
