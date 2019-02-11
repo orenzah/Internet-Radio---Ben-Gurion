@@ -497,7 +497,7 @@ void send_asksong(int arg)
 	msg.stationNumber = htons(msg.stationNumber);
 	memcpy(buffer + 1, &(msg.stationNumber), 2);
 	msg.stationNumber = ntohs(msg.stationNumber);
-	if (send(sockfd, buffer, sizeof(buffer),0) == -1)
+	if (send(sockfd, buffer, sizeof(3),0) == -1)
 	{
 		perror("send");
 		exit(1);
